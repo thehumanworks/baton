@@ -25,6 +25,7 @@ Do not expose the PTY WebSocket server to an untrusted network. It gives clients
 ## Prerequisites
 
 - macOS 13+ recommended.
+- Bun 1.3+ recommended.
 - Node.js 22+ recommended.
 - Xcode command line tools for native module compilation:
 
@@ -35,25 +36,25 @@ xcode-select --install
 ## Install
 
 ```bash
-npm install
+bun install
 ```
 
 `node-pty` is a native module. If installation or launch fails after changing Electron versions, rebuild native dependencies:
 
 ```bash
-npx electron-builder install-app-deps
+bun x electron-builder install-app-deps
 ```
 
 ## Run the macOS Electron app
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 ## Build a macOS app
 
 ```bash
-npm run dist:mac
+bun run dist:mac
 ```
 
 The packaged app is written to `release/`.
@@ -61,7 +62,7 @@ The packaged app is written to `release/`.
 ## Run the web/mobile renderer with the demo terminal
 
 ```bash
-npm run web
+bun run web
 ```
 
 Open the printed Vite URL in a desktop or mobile browser. Terminals in this mode are intentionally simulated.
@@ -69,7 +70,7 @@ Open the printed Vite URL in a desktop or mobile browser. Terminals in this mode
 ## Run the web/mobile renderer with real terminals through the local PTY bridge
 
 ```bash
-npm run web:terminal
+bun run web:terminal
 ```
 
 This starts:
@@ -80,8 +81,8 @@ This starts:
 For testing on a phone on the same LAN, bind the terminal server explicitly and use a token:
 
 ```bash
-TERMINAL_WS_HOST=0.0.0.0 TERMINAL_WS_TOKEN=change-me npm run terminal:server
-VITE_TERMINAL_WS_URL=ws://YOUR_MAC_LAN_IP:8787 VITE_TERMINAL_WS_TOKEN=change-me npm run web
+TERMINAL_WS_HOST=0.0.0.0 TERMINAL_WS_TOKEN=change-me bun run terminal:server
+VITE_TERMINAL_WS_URL=ws://YOUR_MAC_LAN_IP:8787 VITE_TERMINAL_WS_TOKEN=change-me bun run web
 ```
 
 Again: only do this on a trusted network.

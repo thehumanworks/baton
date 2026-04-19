@@ -331,7 +331,7 @@ class DemoTerminalClient implements TerminalClient {
         '  clear              clear terminal',
         '  exit               close demo terminal',
         '',
-        'For real shell access in web/mobile, run npm run web:terminal.'
+        'For real shell access in web/mobile, run bun run web:terminal.'
       ].join('\r\n') + '\r\n$ ')
       return
     }

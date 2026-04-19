@@ -97,7 +97,9 @@ function createWindow(): void {
 
   if (isDevelopment && process.env.ELECTRON_RENDERER_URL) {
     void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
-    mainWindow.webContents.openDevTools({ mode: 'detach' })
+    if (process.env.ORACLE_DEVTOOLS === '1') {
+      mainWindow.webContents.openDevTools({ mode: 'detach' })
+    }
   } else {
     void mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }

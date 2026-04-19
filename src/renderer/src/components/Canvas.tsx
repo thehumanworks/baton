@@ -169,13 +169,20 @@ export function Canvas(props: CanvasProps) {
 
   const modePillTone =
     props.terminalMode === "electron" || props.terminalMode === "websocket"
-      ? "text-[#bbf7d0] border-[rgba(52,211,153,0.28)]"
+      ? "text-stone-100 border-stone-300/30"
       : props.terminalMode === "demo"
-      ? "text-[#fde68a] border-[rgba(251,191,36,0.28)]"
-      : "text-muted-strong border-[rgba(148,163,184,0.18)]";
+      ? "text-stone-300 border-stone-300/20"
+      : "text-muted-strong border-stone-300/15";
+
+  const modeDot =
+    props.terminalMode === "electron" || props.terminalMode === "websocket"
+      ? "bg-stone-100"
+      : props.terminalMode === "demo"
+      ? "bg-stone-400"
+      : "bg-stone-600";
 
   const segmentBtn =
-    "min-w-[42px] min-h-9 px-3 border-0 border-r border-[rgba(148,163,184,0.14)] bg-transparent cursor-pointer hover:bg-[rgba(15,23,42,0.6)] last:border-r-0 max-md:min-h-10";
+    "min-w-[44px] min-h-9 px-3.5 border-0 border-r border-stone-300/10 bg-transparent cursor-pointer text-stone-200 hover:bg-stone-50/5 last:border-r-0 font-medium tracking-wide max-md:min-h-10";
 
   return (
     <section className="relative flex-1 min-w-0 min-h-0 grid grid-rows-[1fr]">
@@ -184,14 +191,14 @@ export function Canvas(props: CanvasProps) {
         aria-label="Canvas controls"
       >
         <button
-          className="btn-primary min-h-9 px-3 rounded-xl max-md:min-h-10"
+          className="btn-primary blade min-h-9 px-3.5 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap max-md:min-h-10"
           type="button"
           onClick={addTerminalAtCenter}
         >
           Spawn Terminal
         </button>
         <div
-          className="flex items-center overflow-hidden rounded-xl border border-[rgba(148,163,184,0.18)] bg-[rgba(7,10,17,0.72)] backdrop-blur-md"
+          className="stone-frame blade flex items-center overflow-hidden"
           role="group"
           aria-label="Zoom controls"
         >
@@ -199,27 +206,34 @@ export function Canvas(props: CanvasProps) {
             type="button"
             className={segmentBtn}
             onClick={() => zoomFromCenter(0.85)}
+            aria-label="Zoom out"
           >
             −
           </button>
-          <button type="button" className={segmentBtn} onClick={resetViewport}>
+          <button
+            type="button"
+            className={`${segmentBtn} tabular-nums text-[12px]`}
+            onClick={resetViewport}
+          >
             {Math.round(viewport.scale * 100)}%
           </button>
           <button
             type="button"
             className={segmentBtn}
             onClick={() => zoomFromCenter(1.18)}
+            aria-label="Zoom in"
           >
             +
           </button>
         </div>
         <span
-          className={`inline-flex items-center min-h-8 px-[11px] rounded-full border bg-[rgba(7,10,17,0.72)] backdrop-blur-md text-xs font-bold max-md:hidden ${modePillTone}`}
+          className={`stone-frame chamfer inline-flex items-center min-h-8 gap-2 px-3.5 text-[11px] tracking-[0.02em] font-medium max-md:hidden ${modePillTone}`}
         >
+          <span className={`w-1.5 h-1.5 rounded-full ${modeDot}`} aria-hidden />
           {props.terminalMode === "electron"
-            ? "local PTY"
+            ? "local pty"
             : props.terminalMode === "websocket"
-            ? "remote PTY"
+            ? "remote pty"
             : "demo terminal"}
         </span>
       </div>
@@ -258,16 +272,23 @@ export function Canvas(props: CanvasProps) {
         </div>
 
         {props.workspace.terminals.length === 0 && (
-          <div className="absolute inset-0 grid place-content-center gap-2 text-center text-muted pointer-events-none">
-            <strong className="text-fg text-2xl">{props.workspace.name}</strong>
-            <span>Spawn a terminal, then pan or zoom the canvas.</span>
+          <div className="absolute inset-0 grid place-content-center gap-3 text-center text-muted pointer-events-none">
+            <span className="text-muted text-[11px] tracking-[0.08em]">
+              Workspace
+            </span>
+            <strong className="text-fg text-3xl font-semibold tracking-tight">
+              {props.workspace.name}
+            </strong>
+            <span className="text-[13px]">
+              Spawn a terminal, then pan or zoom the canvas.
+            </span>
           </div>
         )}
       </div>
 
-      <div className="absolute left-[18px] bottom-4 z-20 px-3 py-2 rounded-full border border-[rgba(148,163,184,0.14)] bg-[rgba(7,10,17,0.64)] text-muted text-xs backdrop-blur-md pointer-events-none max-md:hidden">
-        Drag empty canvas to pan · Scroll to pan · Cmd/Ctrl/Alt + scroll to zoom
-        · Double-click workspace to rename
+      <div className="stone-frame chamfer-l absolute left-[18px] bottom-4 z-20 px-3.5 py-2 text-muted text-[11px] tracking-[0.02em] pointer-events-none max-md:hidden">
+        Drag to pan · scroll to pan · ⌘/ctrl/alt + scroll to zoom · double-click
+        workspace to rename
       </div>
     </section>
   );

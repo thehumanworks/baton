@@ -2,20 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import type { WorkspaceSettings } from "../domain";
 
 const BACKDROP =
-  "fixed inset-0 z-[100] grid place-items-center p-6 bg-[rgba(4,6,12,0.62)] backdrop-blur-md";
+  "fixed inset-0 z-[100] grid place-items-center p-6 bg-[rgba(0,0,0,0.72)] backdrop-blur-md";
 
 const PANEL =
-  "w-[min(420px,100%)] grid gap-3.5 p-[22px] rounded-[18px] border border-panel-border bg-panel text-fg shadow-[0_40px_120px_rgba(0,0,0,0.55)]";
+  "notch w-[min(440px,100%)] grid gap-3.5 p-6 border border-stone-300/15 bg-stone-950/95 text-fg shadow-[0_40px_120px_rgba(0,0,0,0.6)]";
 
-const PANEL_TITLE = "text-base font-bold tracking-[0.01em]";
-const PANEL_LABEL = "text-muted text-xs uppercase tracking-[0.12em]";
+const PANEL_TITLE = "text-[14px] font-semibold tracking-[0.01em] text-stone-100";
+const PANEL_LABEL = "text-muted text-[11px] tracking-[0.04em]";
 const PANEL_MESSAGE = "text-muted-strong text-[13px] leading-[1.5]";
 const PANEL_INPUT =
-  "min-h-10 px-3 rounded-xl border border-[rgba(148,163,184,0.22)] bg-[rgba(8,11,18,0.9)] text-fg outline-none focus:border-[rgba(125,211,252,0.6)] focus:shadow-[0_0_0_3px_rgba(56,189,248,0.18)]";
-const PANEL_ACTIONS = "flex justify-end gap-2.5 mt-1";
+  "chamfer min-h-10 px-3 border border-stone-300/15 bg-stone-950 text-fg outline-none focus:border-stone-300/60 focus:shadow-[0_0_0_2px_rgba(231,229,228,0.16)]";
+const PANEL_ACTIONS = "flex justify-end gap-2.5 mt-2";
 
 const ACTION_BUTTON =
-  "min-h-9 px-4 rounded-xl border border-[rgba(148,163,184,0.22)] bg-[rgba(15,23,42,0.78)] text-inherit cursor-pointer hover:border-[rgba(125,211,252,0.46)] hover:bg-[rgba(15,23,42,0.98)] disabled:opacity-45 disabled:cursor-not-allowed";
+  "chamfer min-h-9 px-4 text-[12px] tracking-[0.02em] border border-stone-300/15 bg-stone-950/80 text-stone-300 cursor-pointer hover:border-stone-300/40 hover:bg-stone-900 hover:text-stone-50 disabled:opacity-40 disabled:cursor-not-allowed";
 
 interface PromptModalProps {
   open: boolean;
@@ -98,7 +98,7 @@ export function PromptModal(props: PromptModalProps) {
           </button>
           <button
             type="button"
-            className="btn-primary min-h-9 px-4 rounded-xl"
+            className="btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap"
             onClick={submit}
             disabled={!value.trim()}
           >
@@ -251,7 +251,7 @@ export function WorkspaceSettingsModal(props: WorkspaceSettingsModalProps) {
           </button>
           <button
             type="button"
-            className="btn-primary min-h-9 px-4 rounded-xl"
+            className="btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap"
             onClick={submit}
           >
             Save
@@ -285,8 +285,8 @@ export function ConfirmModal(props: ConfirmModalProps) {
   if (!props.open) return null;
 
   const confirmClass = props.destructive
-    ? "btn-danger min-h-9 px-4 rounded-xl"
-    : "btn-primary min-h-9 px-4 rounded-xl";
+    ? "btn-danger blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-50 whitespace-nowrap"
+    : "btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap";
 
   return (
     <div className={BACKDROP} role="presentation" onMouseDown={props.onCancel}>
