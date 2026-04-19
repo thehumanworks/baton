@@ -1,0 +1,329 @@
+import { useEffect, useRef, useState } from "react";
+import type { WorkspaceSettings } from "../domain";
+
+const BACKDROP =
+  "fixed inset-0 z-[100] grid place-items-center p-6 bg-[rgba(4,6,12,0.62)] backdrop-blur-md";
+
+const PANEL =
+  "w-[min(420px,100%)] grid gap-3.5 p-[22px] rounded-[18px] border border-panel-border bg-panel text-fg shadow-[0_40px_120px_rgba(0,0,0,0.55)]";
+
+const PANEL_TITLE = "text-base font-bold tracking-[0.01em]";
+const PANEL_LABEL = "text-muted text-xs uppercase tracking-[0.12em]";
+const PANEL_MESSAGE = "text-muted-strong text-[13px] leading-[1.5]";
+const PANEL_INPUT =
+  "min-h-10 px-3 rounded-xl border border-[rgba(148,163,184,0.22)] bg-[rgba(8,11,18,0.9)] text-fg outline-none focus:border-[rgba(125,211,252,0.6)] focus:shadow-[0_0_0_3px_rgba(56,189,248,0.18)]";
+const PANEL_ACTIONS = "flex justify-end gap-2.5 mt-1";
+
+const ACTION_BUTTON =
+  "min-h-9 px-4 rounded-xl border border-[rgba(148,163,184,0.22)] bg-[rgba(15,23,42,0.78)] text-inherit cursor-pointer hover:border-[rgba(125,211,252,0.46)] hover:bg-[rgba(15,23,42,0.98)] disabled:opacity-45 disabled:cursor-not-allowed";
+
+interface PromptModalProps {
+  open: boolean;
+  title: string;
+  label?: string;
+  initialValue?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onSubmit: (value: string) => void;
+  onCancel: () => void;
+}
+
+export function PromptModal(props: PromptModalProps) {
+  const [value, setValue] = useState(props.initialValue ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!props.open) return;
+    setValue(props.initialValue ?? "");
+  }, [props.open, props.initialValue]);
+
+  useEffect(() => {
+    if (!props.open) return;
+    const raf = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [props.open]);
+
+  if (!props.open) return null;
+
+  function submit(): void {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    props.onSubmit(trimmed);
+  }
+
+  return (
+    <div className={BACKDROP} role="presentation" onMouseDown={props.onCancel}>
+      <div
+        className={PANEL}
+        role="dialog"
+        aria-modal="true"
+        aria-label={props.title}
+        onMouseDown={(event) =>
+          event.stopPropagation()}
+      >
+        <div className={PANEL_TITLE}>{props.title}</div>
+        {props.label && (
+          <label className={PANEL_LABEL} htmlFor="modal-prompt-input">
+            {props.label}
+          </label>
+        )}
+        <input
+          id="modal-prompt-input"
+          ref={inputRef}
+          className={PANEL_INPUT}
+          type="text"
+          value={value}
+          onChange={(event) =>
+            setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              submit();
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              props.onCancel();
+            }
+          }}
+        />
+        <div className={PANEL_ACTIONS}>
+          <button
+            type="button"
+            className={ACTION_BUTTON}
+            onClick={props.onCancel}
+          >
+            {props.cancelLabel ?? "Cancel"}
+          </button>
+          <button
+            type="button"
+            className="btn-primary min-h-9 px-4 rounded-xl"
+            onClick={submit}
+            disabled={!value.trim()}
+          >
+            {props.confirmLabel ?? "Confirm"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface WorkspaceSettingsModalProps {
+  open: boolean;
+  workspaceName: string;
+  initialSettings: WorkspaceSettings;
+  onSubmit: (settings: WorkspaceSettings) => void;
+  onCancel: () => void;
+}
+
+export function WorkspaceSettingsModal(props: WorkspaceSettingsModalProps) {
+  const [startCommand, setStartCommand] = useState(
+    props.initialSettings.startCommand ?? "",
+  );
+  const [defaultCwd, setDefaultCwd] = useState(
+    props.initialSettings.defaultCwd ?? "",
+  );
+  const startInputRef = useRef<HTMLInputElement>(null);
+
+  const canPickDirectory =
+    typeof window !== "undefined" &&
+    typeof window.oracleTerminal?.workspace?.pickDirectory === "function";
+
+  useEffect(() => {
+    if (!props.open) return;
+    setStartCommand(props.initialSettings.startCommand ?? "");
+    setDefaultCwd(props.initialSettings.defaultCwd ?? "");
+  }, [props.open, props.initialSettings]);
+
+  useEffect(() => {
+    if (!props.open) return;
+    const raf = requestAnimationFrame(() => {
+      startInputRef.current?.focus();
+      startInputRef.current?.select();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [props.open]);
+
+  if (!props.open) return null;
+
+  function submit(): void {
+    const next: WorkspaceSettings = {};
+    const trimmedCommand = startCommand.trim();
+    if (trimmedCommand) next.startCommand = trimmedCommand;
+    const trimmedCwd = defaultCwd.trim();
+    if (trimmedCwd) next.defaultCwd = trimmedCwd;
+    props.onSubmit(next);
+  }
+
+  async function browseForDirectory(): Promise<void> {
+    const bridge = window.oracleTerminal?.workspace;
+    if (!bridge?.pickDirectory) return;
+    const result = await bridge.pickDirectory();
+    if (!result.canceled && result.path) {
+      setDefaultCwd(result.path);
+    }
+  }
+
+  return (
+    <div className={BACKDROP} role="presentation" onMouseDown={props.onCancel}>
+      <div
+        className={PANEL}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Workspace settings · ${props.workspaceName}`}
+        onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            props.onCancel();
+          }
+        }}
+      >
+        <div className={PANEL_TITLE}>
+          Workspace settings · {props.workspaceName}
+        </div>
+
+        <label className={PANEL_LABEL} htmlFor="workspace-start-command">
+          Start command
+        </label>
+        <input
+          id="workspace-start-command"
+          ref={startInputRef}
+          className={PANEL_INPUT}
+          type="text"
+          placeholder="e.g. claude"
+          value={startCommand}
+          onChange={(event) => setStartCommand(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              submit();
+            }
+          }}
+        />
+        <div className={PANEL_MESSAGE}>
+          Runs once inside each newly spawned terminal. Leave empty for a plain
+          shell.
+        </div>
+
+        <label className={PANEL_LABEL} htmlFor="workspace-default-cwd">
+          Default directory
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="workspace-default-cwd"
+            className={`${PANEL_INPUT} flex-1 min-w-0`}
+            type="text"
+            placeholder="Defaults to your home directory"
+            value={defaultCwd}
+            onChange={(event) => setDefaultCwd(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                submit();
+              }
+            }}
+          />
+          {canPickDirectory && (
+            <button
+              type="button"
+              className={ACTION_BUTTON}
+              onClick={() => void browseForDirectory()}
+            >
+              Browse…
+            </button>
+          )}
+        </div>
+        <div className={PANEL_MESSAGE}>
+          ~, $VAR, and %VAR% are expanded. Invalid or missing paths fall back
+          to your home directory.
+        </div>
+
+        <div className={PANEL_ACTIONS}>
+          <button
+            type="button"
+            className={ACTION_BUTTON}
+            onClick={props.onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn-primary min-h-9 px-4 rounded-xl"
+            onClick={submit}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ConfirmModalProps {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export function ConfirmModal(props: ConfirmModalProps) {
+  const confirmRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!props.open) return;
+    const raf = requestAnimationFrame(() => confirmRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, [props.open]);
+
+  if (!props.open) return null;
+
+  const confirmClass = props.destructive
+    ? "btn-danger min-h-9 px-4 rounded-xl"
+    : "btn-primary min-h-9 px-4 rounded-xl";
+
+  return (
+    <div className={BACKDROP} role="presentation" onMouseDown={props.onCancel}>
+      <div
+        className={PANEL}
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={props.title}
+        onMouseDown={(event) =>
+          event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            props.onCancel();
+          }
+        }}
+      >
+        <div className={PANEL_TITLE}>{props.title}</div>
+        <div className={PANEL_MESSAGE}>{props.message}</div>
+        <div className={PANEL_ACTIONS}>
+          <button
+            type="button"
+            className={ACTION_BUTTON}
+            onClick={props.onCancel}
+          >
+            {props.cancelLabel ?? "Cancel"}
+          </button>
+          <button
+            ref={confirmRef}
+            type="button"
+            className={confirmClass}
+            onClick={props.onConfirm}
+          >
+            {props.confirmLabel ?? "Confirm"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

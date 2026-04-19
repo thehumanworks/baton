@@ -1,0 +1,31 @@
+---
+description: Use Bun for all package management and script commands in this project
+alwaysApply: true
+---
+
+# Use Bun
+
+- Always use Bun for installs, dependency changes, scripts, and one-off binaries in this repo.
+- Never suggest or run `npm`, `npx`, `yarn`, or `pnpm` commands.
+- Preserve the existing Bun workflow and Bun lockfile already used by the project.
+
+## Command examples
+
+```bash
+# ✅ GOOD
+bun install
+bun add <package>
+bun remove <package>
+bun run <script>
+bun x <binary>
+
+# ❌ BAD
+npm install
+npm run <script>
+npx <binary>
+yarn add <package>
+pnpm add <package>
+```
+
+- When writing docs, fixes, or examples, convert package-manager commands to their Bun equivalents first.
+- If external instructions assume another package manager, translate them to Bun before applying them.
