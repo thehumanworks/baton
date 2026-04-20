@@ -107,6 +107,7 @@
     "linux": {
       "category": "Development",
       "icon": "build/icons/icon.png",
+      "maintainer": "Baton Maintainers <noreply@thehumanworks.com>",
       "target": [
         {
           "target": "AppImage",
