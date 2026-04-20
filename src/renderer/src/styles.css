@@ -24,7 +24,11 @@
 }
 
 @theme {
-  /* Monochrome stone palette — dark mode only */
+  /*
+   * Theme tokens default to dark. The light mode overrides live further
+   * down under [data-theme="light"] and reassign the same variables so
+   * component styles only ever read from these names.
+   */
   --color-canvas: #0a0a0a;
   --color-panel: rgba(18, 18, 17, 0.94);
   --color-panel-border: rgba(231, 229, 228, 0.10);
@@ -37,8 +41,116 @@
   --color-warning: #e7e5e4;
   --color-danger: #fafafa;
 
+  --surface-sidebar: rgba(10, 10, 10, 0.90);
+  --surface-window: rgba(10, 10, 10, 0.95);
+  --surface-window-border: rgba(231, 229, 228, 0.15);
+  --surface-window-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(245, 245, 244, 0.04);
+  --surface-header-grad: linear-gradient(180deg, rgba(28, 28, 27, 0.94), rgba(12, 12, 12, 0.88));
+  --surface-modal-scrim: rgba(0, 0, 0, 0.72);
+  --surface-modal-panel: rgba(10, 10, 10, 0.95);
+  --surface-input-bg: #0a0a0a;
+  --surface-input-border: rgba(231, 229, 228, 0.15);
+  --surface-input-focus-ring: rgba(231, 229, 228, 0.16);
+  --surface-stone-frame-bg: rgba(12, 12, 12, 0.72);
+  --surface-stone-frame-bg-solid: rgba(18, 18, 17, 0.92);
+  --surface-stone-frame-border: rgba(231, 229, 228, 0.14);
+  --surface-stone-frame-border-solid: rgba(231, 229, 228, 0.16);
+  --surface-btn-secondary-bg: rgba(10, 10, 10, 0.80);
+  --surface-btn-secondary-border: rgba(231, 229, 228, 0.15);
+  --surface-btn-secondary-hover-bg: #1c1917;
+  --surface-btn-secondary-hover-border: rgba(231, 229, 228, 0.40);
+  --surface-item-active-border: rgba(231, 229, 228, 0.25);
+  --surface-item-active-bg: rgba(245, 245, 244, 0.06);
+  --surface-item-hover-bg: rgba(245, 245, 244, 0.04);
+  --surface-item-avatar-bg: rgba(245, 245, 244, 0.08);
+
+  --grid-line: rgba(245, 245, 244, 0.025);
+  --glow-1: rgba(245, 245, 244, 0.045);
+  --glow-2: rgba(214, 211, 209, 0.035);
+
+  --btn-primary-grad: linear-gradient(180deg, #fafaf9, #d6d3d1);
+  --btn-primary-grad-hover: linear-gradient(180deg, #ffffff, #e7e5e4);
+  --btn-primary-text: #000000;
+  --btn-primary-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 -1px 0 rgba(0, 0, 0, 0.25) inset, 0 10px 24px rgba(0, 0, 0, 0.45);
+  --btn-primary-text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  --btn-danger-grad: linear-gradient(180deg, #1c1917, #0a0a0a);
+  --btn-danger-grad-hover: linear-gradient(180deg, #292524, #171717);
+  --btn-danger-text: #fafaf9;
+  --btn-danger-border-inset: 0 1px 0 rgba(245, 245, 244, 0.08) inset, 0 0 0 1px rgba(245, 245, 244, 0.35) inset;
+
+  --scrollbar-thumb: rgba(231, 229, 228, 0.18);
+
+  --terminal-bg: #0a0a0a;
+  --terminal-fg: #e7e5e4;
+  --terminal-cursor: #fafaf9;
+  --terminal-cursor-accent: #0a0a0a;
+  --terminal-selection: #404040;
+
   --font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Terminess Nerd Font Mono", "JetBrainsMono Nerd Font Mono", "FiraCode Nerd Font Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/*
+ * Light palette — warm off-white stone with dark ink. Reassigns only the
+ * surface and accent tokens so component styles need no changes.
+ */
+[data-theme="light"] {
+  --color-canvas: #f5f4f1;
+  --color-panel: rgba(255, 254, 251, 0.94);
+  --color-panel-border: rgba(28, 25, 23, 0.12);
+  --color-fg: #1c1917;
+  --color-muted: #57534e;
+  --color-muted-strong: #292524;
+  --color-accent: #1c1917;
+  --color-accent-strong: #0a0a0a;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+
+  --surface-sidebar: rgba(250, 249, 246, 0.92);
+  --surface-window: rgba(255, 254, 251, 0.96);
+  --surface-window-border: rgba(28, 25, 23, 0.14);
+  --surface-window-shadow: 0 18px 60px rgba(28, 25, 23, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --surface-header-grad: linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(231, 229, 228, 0.92));
+  --surface-modal-scrim: rgba(28, 25, 23, 0.35);
+  --surface-modal-panel: rgba(255, 254, 251, 0.98);
+  --surface-input-bg: #ffffff;
+  --surface-input-border: rgba(28, 25, 23, 0.18);
+  --surface-input-focus-ring: rgba(28, 25, 23, 0.18);
+  --surface-stone-frame-bg: rgba(255, 254, 251, 0.82);
+  --surface-stone-frame-bg-solid: rgba(255, 254, 251, 0.94);
+  --surface-stone-frame-border: rgba(28, 25, 23, 0.12);
+  --surface-stone-frame-border-solid: rgba(28, 25, 23, 0.16);
+  --surface-btn-secondary-bg: rgba(255, 254, 251, 0.92);
+  --surface-btn-secondary-border: rgba(28, 25, 23, 0.16);
+  --surface-btn-secondary-hover-bg: rgba(231, 229, 228, 0.7);
+  --surface-btn-secondary-hover-border: rgba(28, 25, 23, 0.38);
+  --surface-item-active-border: rgba(28, 25, 23, 0.22);
+  --surface-item-active-bg: rgba(28, 25, 23, 0.06);
+  --surface-item-hover-bg: rgba(28, 25, 23, 0.04);
+  --surface-item-avatar-bg: rgba(28, 25, 23, 0.08);
+
+  --grid-line: rgba(28, 25, 23, 0.06);
+  --glow-1: rgba(28, 25, 23, 0.05);
+  --glow-2: rgba(28, 25, 23, 0.035);
+
+  --btn-primary-grad: linear-gradient(180deg, #1c1917, #0a0a0a);
+  --btn-primary-grad-hover: linear-gradient(180deg, #292524, #171717);
+  --btn-primary-text: #fafaf9;
+  --btn-primary-shadow: 0 1px 0 rgba(255, 255, 255, 0.15) inset, 0 -1px 0 rgba(0, 0, 0, 0.35) inset, 0 10px 24px rgba(28, 25, 23, 0.18);
+  --btn-primary-text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  --btn-danger-grad: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  --btn-danger-grad-hover: linear-gradient(180deg, #dc2626, #991b1b);
+  --btn-danger-text: #fef2f2;
+  --btn-danger-border-inset: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 0 0 1px rgba(127, 29, 29, 0.65) inset;
+
+  --scrollbar-thumb: rgba(28, 25, 23, 0.30);
+
+  --terminal-bg: #fbfaf7;
+  --terminal-fg: #1c1917;
+  --terminal-cursor: #1c1917;
+  --terminal-cursor-accent: #fbfaf7;
+  --terminal-selection: #d6d3d1;
 }
 
 :root {
@@ -46,6 +158,10 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 html,
@@ -82,21 +198,101 @@ input {
 @layer components {
   .app-bg {
     background:
-      radial-gradient(circle at top left, rgba(245, 245, 244, 0.045), transparent 36rem),
-      radial-gradient(circle at 82% 8%, rgba(214, 211, 209, 0.035), transparent 32rem),
+      radial-gradient(circle at top left, var(--glow-1), transparent 36rem),
+      radial-gradient(circle at 82% 8%, var(--glow-2), transparent 32rem),
       var(--color-canvas);
   }
 
   .canvas-grid {
     background-color: var(--color-canvas);
     background-image:
-      linear-gradient(rgba(245, 245, 244, 0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(245, 245, 244, 0.025) 1px, transparent 1px);
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
   .terminal-header-grad {
-    background: linear-gradient(180deg, rgba(28, 28, 27, 0.94), rgba(12, 12, 12, 0.88));
+    background: var(--surface-header-grad);
+  }
+
+  /*
+   * Theme-aware surfaces used by the app shell. These are referenced by
+   * Tailwind arbitrary values or by component classes so toggling
+   * `data-theme` flips the surface colors without per-component edits.
+   */
+  .surface-sidebar {
+    background: var(--surface-sidebar);
+  }
+
+  .surface-window {
+    border: 1px solid var(--surface-window-border);
+    background: var(--surface-window);
+    box-shadow: var(--surface-window-shadow);
+  }
+
+  .surface-window-divider {
+    border-bottom: 1px solid var(--surface-window-border);
+  }
+
+  .surface-modal-scrim {
+    background: var(--surface-modal-scrim);
+  }
+
+  .surface-modal-panel {
+    border: 1px solid var(--surface-window-border);
+    background: var(--surface-modal-panel);
+    color: var(--color-fg);
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.35);
+  }
+
+  .surface-input {
+    border: 1px solid var(--surface-input-border);
+    background: var(--surface-input-bg);
+    color: var(--color-fg);
+  }
+
+  .surface-input:focus {
+    border-color: var(--color-muted-strong);
+    box-shadow: 0 0 0 2px var(--surface-input-focus-ring);
+  }
+
+  .surface-btn-secondary {
+    border: 1px solid var(--surface-btn-secondary-border);
+    background: var(--surface-btn-secondary-bg);
+    color: var(--color-muted-strong);
+  }
+
+  .surface-btn-secondary:hover {
+    border-color: var(--surface-btn-secondary-hover-border);
+    background: var(--surface-btn-secondary-hover-bg);
+    color: var(--color-fg);
+  }
+
+  .surface-btn-secondary[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .surface-item-inactive {
+    color: var(--color-muted-strong);
+    border-color: transparent;
+    background-color: transparent;
+  }
+
+  .surface-item-inactive:hover {
+    background-color: var(--surface-item-hover-bg);
+    color: var(--color-fg);
+  }
+
+  .surface-item-active {
+    color: var(--color-fg);
+    border-color: var(--surface-item-active-border);
+    background-color: var(--surface-item-active-bg);
+  }
+
+  .surface-item-avatar {
+    background: var(--surface-item-avatar-bg);
+    color: var(--color-fg);
   }
 
   /*
@@ -162,24 +358,21 @@ input {
   .btn-primary:focus,
   .btn-primary:active,
   .btn-primary:disabled {
-    color: #000000;
+    color: var(--btn-primary-text);
   }
 
   .btn-primary {
-    background: linear-gradient(180deg, #fafaf9, #d6d3d1);
+    background: var(--btn-primary-grad);
     font-weight: 700;
     letter-spacing: 0.02em;
     cursor: pointer;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.6) inset,
-      0 -1px 0 rgba(0, 0, 0, 0.25) inset,
-      0 10px 24px rgba(0, 0, 0, 0.45);
+    text-shadow: var(--btn-primary-text-shadow);
+    box-shadow: var(--btn-primary-shadow);
     transition: transform 120ms ease, background 120ms ease;
   }
 
   .btn-primary:hover {
-    background: linear-gradient(180deg, #ffffff, #e7e5e4);
+    background: var(--btn-primary-grad-hover);
   }
 
   .btn-primary:active {
@@ -192,30 +385,28 @@ input {
   }
 
   .btn-danger {
-    background: linear-gradient(180deg, #1c1917, #0a0a0a);
-    color: #fafaf9;
+    background: var(--btn-danger-grad);
+    color: var(--btn-danger-text);
     font-weight: 600;
     letter-spacing: 0.02em;
     cursor: pointer;
-    box-shadow:
-      0 1px 0 rgba(245, 245, 244, 0.08) inset,
-      0 0 0 1px rgba(245, 245, 244, 0.35) inset;
+    box-shadow: var(--btn-danger-border-inset);
   }
 
   .btn-danger:hover {
-    background: linear-gradient(180deg, #292524, #171717);
+    background: var(--btn-danger-grad-hover);
   }
 
   /* The outer bracket frame on unique UI elements — hairline stone trim. */
   .stone-frame {
-    border: 1px solid rgba(231, 229, 228, 0.14);
-    background: rgba(12, 12, 12, 0.72);
+    border: 1px solid var(--surface-stone-frame-border);
+    background: var(--surface-stone-frame-bg);
     backdrop-filter: blur(14px);
   }
 
   .stone-frame-solid {
-    border: 1px solid rgba(231, 229, 228, 0.16);
-    background: rgba(18, 18, 17, 0.92);
+    border: 1px solid var(--surface-stone-frame-border-solid);
+    background: var(--surface-stone-frame-bg-solid);
     backdrop-filter: blur(16px);
   }
 
@@ -241,7 +432,7 @@ input {
   }
 
   .traffic-light:focus-visible {
-    outline: 2px solid rgba(245, 245, 244, 0.7);
+    outline: 2px solid var(--color-muted-strong);
     outline-offset: 2px;
   }
 
@@ -282,7 +473,56 @@ input {
     width: 10px;
     height: 10px;
     background:
-      linear-gradient(135deg, transparent 0 45%, rgba(231, 229, 228, 0.45) 45% 55%, transparent 55% 70%, rgba(231, 229, 228, 0.35) 70% 80%, transparent 80%);
+      linear-gradient(135deg, transparent 0 45%, var(--color-muted) 45% 55%, transparent 55% 70%, var(--color-muted-strong) 70% 80%, transparent 80%);
+    opacity: 0.55;
+  }
+
+  /*
+   * Segmented theme toggle — a small pill that hosts three radio-like
+   * buttons. Each segment renders with theme-aware tokens so it reads
+   * correctly in both light and dark mode.
+   */
+  .theme-toggle {
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0;
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid var(--surface-btn-secondary-border);
+    background: var(--surface-btn-secondary-bg);
+  }
+
+  .theme-toggle-option {
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--color-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+  }
+
+  .theme-toggle-option:hover {
+    color: var(--color-fg);
+    background: var(--surface-item-hover-bg);
+  }
+
+  .theme-toggle-option[aria-pressed="true"] {
+    color: var(--color-fg);
+    background: var(--surface-item-active-bg);
+    box-shadow: inset 0 0 0 1px var(--surface-item-active-border);
+  }
+
+  .theme-toggle-option-icon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    vertical-align: -1px;
   }
 }
 
@@ -298,19 +538,20 @@ input {
 
 .xterm-viewport {
   scrollbar-width: thin;
-  scrollbar-color: rgba(231, 229, 228, 0.18) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 /*
- * The bladed primary button sits on a light silver gradient, so its label
- * must stay dark for contrast. This rule lives outside any @layer so it
- * reliably wins over Tailwind utilities (which live in the utilities layer)
- * regardless of which color class happens to be in the class list.
+ * The bladed primary button sits on a colored gradient, so its label
+ * must stay in the primary text color for contrast. This rule lives outside
+ * any @layer so it reliably wins over Tailwind utilities (which live in the
+ * utilities layer) regardless of which color class happens to be in the
+ * class list.
  */
 .btn-primary,
 .btn-primary:hover,
 .btn-primary:focus,
 .btn-primary:active,
 .btn-primary:disabled {
-  color: #000000;
+  color: var(--btn-primary-text);
 }

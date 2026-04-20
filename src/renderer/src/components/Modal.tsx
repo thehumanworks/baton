@@ -2,20 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import type { WorkspaceSettings } from "../domain";
 
 const BACKDROP =
-  "fixed inset-0 z-[100] grid place-items-center p-6 bg-[rgba(0,0,0,0.72)] backdrop-blur-md";
+  "surface-modal-scrim fixed inset-0 z-[100] grid place-items-center p-6 backdrop-blur-md";
 
 const PANEL =
-  "notch w-[min(440px,100%)] grid gap-3.5 p-6 border border-stone-300/15 bg-stone-950/95 text-fg shadow-[0_40px_120px_rgba(0,0,0,0.6)]";
+  "notch surface-modal-panel w-[min(440px,100%)] grid gap-3.5 p-6";
 
-const PANEL_TITLE = "text-[14px] font-semibold tracking-[0.01em] text-stone-100";
+const PANEL_TITLE = "text-[14px] font-semibold tracking-[0.01em] text-fg";
 const PANEL_LABEL = "text-muted text-[11px] tracking-[0.04em]";
 const PANEL_MESSAGE = "text-muted-strong text-[13px] leading-[1.5]";
 const PANEL_INPUT =
-  "chamfer min-h-10 px-3 border border-stone-300/15 bg-stone-950 text-fg outline-none focus:border-stone-300/60 focus:shadow-[0_0_0_2px_rgba(231,229,228,0.16)]";
+  "chamfer surface-input min-h-10 px-3 outline-none";
 const PANEL_ACTIONS = "flex justify-end gap-2.5 mt-2";
 
 const ACTION_BUTTON =
-  "chamfer min-h-9 px-4 text-[12px] tracking-[0.02em] border border-stone-300/15 bg-stone-950/80 text-stone-300 cursor-pointer hover:border-stone-300/40 hover:bg-stone-900 hover:text-stone-50 disabled:opacity-40 disabled:cursor-not-allowed";
+  "chamfer surface-btn-secondary min-h-9 px-4 text-[12px] tracking-[0.02em] cursor-pointer";
 
 interface PromptModalProps {
   open: boolean;
@@ -98,7 +98,7 @@ export function PromptModal(props: PromptModalProps) {
           </button>
           <button
             type="button"
-            className="btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap"
+            className="btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] whitespace-nowrap"
             onClick={submit}
             disabled={!value.trim()}
           >
@@ -251,7 +251,7 @@ export function WorkspaceSettingsModal(props: WorkspaceSettingsModalProps) {
           </button>
           <button
             type="button"
-            className="btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap"
+            className="btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] whitespace-nowrap"
             onClick={submit}
           >
             Save
@@ -285,8 +285,8 @@ export function ConfirmModal(props: ConfirmModalProps) {
   if (!props.open) return null;
 
   const confirmClass = props.destructive
-    ? "btn-danger blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-50 whitespace-nowrap"
-    : "btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap";
+    ? "btn-danger blade min-h-9 px-4 text-[12px] tracking-[0.02em] whitespace-nowrap"
+    : "btn-primary blade min-h-9 px-4 text-[12px] tracking-[0.02em] whitespace-nowrap";
 
   return (
     <div className={BACKDROP} role="presentation" onMouseDown={props.onCancel}>

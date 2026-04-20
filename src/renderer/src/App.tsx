@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Canvas } from "./components/Canvas";
 import { WorkspaceSidebar } from "./components/WorkspaceSidebar";
 import {
@@ -17,6 +17,8 @@ import {
 import { loadAppState, saveAppState } from "./persistence";
 import { TerminalClientContext } from "./services/terminalContext";
 import { createBufferedTerminalClient } from "./services/terminalClient";
+import { ThemeProvider } from "./services/themeContext";
+import type { ThemePreference } from "./theme";
 
 export function App() {
   const initialState = useMemo(loadAppState, []);
@@ -29,6 +31,9 @@ export function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     initialState.sidebarCollapsed,
   );
+  const [themePreference, setThemePreference] = useState<ThemePreference>(
+    initialState.themePreference,
+  );
   const [createPromptOpen, setCreatePromptOpen] = useState(false);
   const [renameTargetId, setRenameTargetId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -40,8 +45,17 @@ export function App() {
       workspaces[0];
 
   useEffect(() => {
-    saveAppState({ workspaces, activeWorkspaceId, sidebarCollapsed });
-  }, [workspaces, activeWorkspaceId, sidebarCollapsed]);
+    saveAppState({
+      workspaces,
+      activeWorkspaceId,
+      sidebarCollapsed,
+      themePreference,
+    });
+  }, [workspaces, activeWorkspaceId, sidebarCollapsed, themePreference]);
+
+  const handleThemeChange = useCallback((next: ThemePreference) => {
+    setThemePreference(next);
+  }, []);
 
   useEffect(() => {
     return terminalClient.onExit((event) => {
@@ -240,6 +254,10 @@ export function App() {
     : null;
 
   return (
+    <ThemeProvider
+      preference={themePreference}
+      onPreferenceChange={handleThemeChange}
+    >
     <TerminalClientContext.Provider value={terminalClient}>
       <main className="app-bg flex w-full h-full min-w-0 min-h-0">
         <WorkspaceSidebar
@@ -306,5 +324,6 @@ export function App() {
         onCancel={() => setSettingsTargetId(null)}
       />
     </TerminalClientContext.Provider>
+    </ThemeProvider>
   );
 }

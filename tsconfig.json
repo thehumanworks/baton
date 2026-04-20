@@ -22,5 +22,6 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["electron.vite.config.ts", "vite.web.config.ts", "src", "server"]
+  "include": ["electron.vite.config.ts", "vite.web.config.ts", "src", "server"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }

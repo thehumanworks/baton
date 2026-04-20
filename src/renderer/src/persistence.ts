@@ -1,4 +1,5 @@
 import { createWorkspace, type WorkspaceSettings, type WorkspaceState } from './domain'
+import { sanitizeThemePreference, type ThemePreference } from './theme'
 
 const STORAGE_KEY = 'oracle-terminal-canvas.state.v1'
 
@@ -6,6 +7,7 @@ export interface PersistedAppState {
   workspaces: WorkspaceState[]
   activeWorkspaceId: string
   sidebarCollapsed: boolean
+  themePreference: ThemePreference
 }
 
 function sanitizeSettings(raw: unknown): WorkspaceSettings {
@@ -57,7 +59,8 @@ export function loadAppState(): PersistedAppState {
       return {
         workspaces: [fallbackWorkspace],
         activeWorkspaceId: fallbackWorkspace.id,
-        sidebarCollapsed: false
+        sidebarCollapsed: false,
+        themePreference: sanitizeThemePreference(undefined)
       }
     }
 
@@ -73,13 +76,15 @@ export function loadAppState(): PersistedAppState {
     return {
       workspaces,
       activeWorkspaceId,
-      sidebarCollapsed: Boolean(parsed.sidebarCollapsed)
+      sidebarCollapsed: Boolean(parsed.sidebarCollapsed),
+      themePreference: sanitizeThemePreference(parsed.themePreference)
     }
   } catch {
     return {
       workspaces: [fallbackWorkspace],
       activeWorkspaceId: fallbackWorkspace.id,
-      sidebarCollapsed: false
+      sidebarCollapsed: false,
+      themePreference: sanitizeThemePreference(undefined)
     }
   }
 }
