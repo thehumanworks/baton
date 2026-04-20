@@ -13,12 +13,10 @@ const ICONS: Record<ThemePreference, string> = {
   dark: '☾',
 }
 
-interface ThemeToggleProps {
-  compact?: boolean
-}
-
-export function ThemeToggle({ compact = false }: ThemeToggleProps) {
+export function ThemeToggle() {
   const { preference, setPreference } = useThemeContext()
+  const activeIndex = THEME_PREFERENCES.indexOf(preference)
+  const optionCount = THEME_PREFERENCES.length
 
   return (
     <div
@@ -26,7 +24,13 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
       role="radiogroup"
       aria-label="Colour theme"
       title={`Theme: ${LABELS[preference]}`}
+      style={{ ['--theme-toggle-count' as string]: optionCount }}
     >
+      <span
+        aria-hidden
+        className="theme-toggle-thumb"
+        style={{ ['--theme-toggle-index' as string]: activeIndex }}
+      />
       {THEME_PREFERENCES.map((option) => {
         const active = option === preference
         return (
@@ -37,13 +41,13 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
             aria-checked={active}
             aria-pressed={active}
             aria-label={LABELS[option]}
+            title={LABELS[option]}
             className="theme-toggle-option app-region-no-drag"
             onClick={() => setPreference(option)}
           >
             <span aria-hidden className="theme-toggle-option-icon">
               {ICONS[option]}
             </span>
-            {compact ? null : LABELS[option]}
           </button>
         )
       })}

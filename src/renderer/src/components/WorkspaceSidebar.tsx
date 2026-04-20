@@ -181,7 +181,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
               Theme
             </span>
           )}
-          <ThemeToggle compact={props.collapsed} />
+          <ThemeToggle />
         </div>
       </div>
     </aside>
