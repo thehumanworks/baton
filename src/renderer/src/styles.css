@@ -501,6 +501,13 @@ input {
     background: var(--surface-btn-secondary-bg);
   }
 
+  .theme-toggle[data-compact='true'] {
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-auto-rows: 1fr;
+    justify-self: center;
+  }
+
   .theme-toggle-thumb {
     position: absolute;
     top: 2px;
@@ -513,6 +520,16 @@ input {
     transform: translateX(calc(var(--theme-toggle-index) * 100%));
     transition: transform 220ms cubic-bezier(0.4, 0.0, 0.2, 1);
     pointer-events: none;
+  }
+
+  .theme-toggle[data-compact='true'] .theme-toggle-thumb {
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: auto;
+    width: auto;
+    height: calc((100% - 4px) / var(--theme-toggle-count));
+    transform: translateY(calc(var(--theme-toggle-index) * 100%));
   }
 
   @media (prefers-reduced-motion: reduce) {

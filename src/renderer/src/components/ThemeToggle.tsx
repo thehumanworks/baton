@@ -56,7 +56,7 @@ const ICONS: Record<ThemePreference, ReactNode> = {
   ),
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ compact = false }: { compact?: boolean } = {}) {
   const { preference, setPreference } = useThemeContext()
   const activeIndex = THEME_PREFERENCES.indexOf(preference)
   const optionCount = THEME_PREFERENCES.length
@@ -64,6 +64,7 @@ export function ThemeToggle() {
   return (
     <div
       className="theme-toggle"
+      data-compact={compact ? 'true' : undefined}
       role="radiogroup"
       aria-label="Colour theme"
       title={`Theme: ${LABELS[preference]}`}

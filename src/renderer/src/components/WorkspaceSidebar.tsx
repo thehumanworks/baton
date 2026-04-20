@@ -1,4 +1,6 @@
+import type { CSSProperties } from "react";
 import type { WorkspaceState } from "../domain";
+import { useTitlebarInset } from "../services/windowChrome";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface WorkspaceSidebarProps {
@@ -43,17 +45,27 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
   const isMacDesktop =
     typeof window !== "undefined" &&
     window.baton?.platform === "darwin";
+  const titlebarInset = useTitlebarInset();
+  const hasTitlebarInset = titlebarInset > 0;
+
   let headerClass: string;
+  let headerStyle: CSSProperties | undefined;
   if (isMacDesktop) {
-    headerClass = props.collapsed
-      ? "app-region-drag flex items-center justify-center h-[96px] px-2 pt-[44px] pb-[18px] border-b border-panel-border"
-      : "app-region-drag flex items-center gap-3 h-[52px] pl-[82px] pr-3.5 py-2 border-b border-panel-border";
+    if (props.collapsed) {
+      headerClass = hasTitlebarInset
+        ? "app-region-drag flex items-center justify-center h-[96px] px-2 pt-[44px] pb-[18px] border-b border-panel-border"
+        : "app-region-drag flex items-center justify-center h-[72px] px-2 pt-[22px] pb-[18px] border-b border-panel-border";
+    } else {
+      headerClass =
+        "app-region-drag flex items-center gap-3 h-[72px] pr-3.5 pt-[22px] pb-2 border-b border-panel-border";
+      headerStyle = { paddingLeft: `calc(var(--titlebar-inset, 0px) + 0.875rem)` };
+    }
   } else {
     headerClass =
-      "app-region-drag flex items-center gap-3 h-[72px] px-3.5 py-[18px] border-b border-panel-border";
+      "app-region-drag flex items-center gap-3 h-[88px] px-3.5 pt-[28px] pb-[18px] border-b border-panel-border";
   }
 
-  const collapsedSidebarClass = isMacDesktop
+  const collapsedSidebarClass = isMacDesktop && hasTitlebarInset
     ? SIDEBAR_COLLAPSED_MAC
     : SIDEBAR_COLLAPSED;
 
@@ -63,7 +75,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         props.collapsed ? collapsedSidebarClass : SIDEBAR_EXPANDED
       }`}
     >
-      <div className={headerClass}>
+      <div className={headerClass} style={headerStyle}>
         <button
           className={ICON_BUTTON}
           type="button"
@@ -90,12 +102,12 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         </button>
         {!props.collapsed && (
           <div className="grid gap-0.5 min-w-0">
-            <span className="text-muted text-[10px] tracking-[0.24em] uppercase">
-              Orchestrate terminals
-            </span>
             <strong className="text-sm font-semibold tracking-[0.01em] text-fg">
               Baton
             </strong>
+            <span className="text-muted text-[10px] tracking-[0.24em] uppercase">
+              Orchestrate terminals
+            </span>
           </div>
         )}
       </div>
@@ -122,7 +134,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
               {selected && !props.collapsed && (
                 <span
                   aria-hidden
-                  className="absolute left-1 top-2 bottom-5 w-[2px] bg-fg"
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-[2px] bg-fg"
                 />
               )}
               <span className="chamfer surface-item-avatar grid place-items-center shrink-0 grow-0 basis-9 w-9 h-9 font-semibold tracking-wide">
@@ -144,10 +156,16 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         })}
       </div>
 
-      <div className="grid gap-2.5 p-3.5 border-t border-panel-border">
+      <div
+        className={`grid gap-2.5 border-t border-panel-border ${
+          props.collapsed ? "p-2 justify-items-center" : "p-3.5"
+        }`}
+      >
         <button
           className={`app-region-no-drag btn-primary ${
-            props.collapsed ? "blade-compact text-lg leading-none" : "blade px-3 text-[12px] tracking-[0.02em]"
+            props.collapsed
+              ? "blade-compact text-lg leading-none w-11 max-w-full"
+              : "blade px-3 text-[12px] tracking-[0.02em] w-full"
           } min-h-9 overflow-hidden whitespace-nowrap`}
           type="button"
           onClick={props.onAddWorkspace}
@@ -187,7 +205,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
               Theme
             </span>
           )}
-          <ThemeToggle />
+          <ThemeToggle compact={props.collapsed} />
         </div>
       </div>
     </aside>

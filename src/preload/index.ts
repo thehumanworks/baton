@@ -18,6 +18,17 @@ interface PickDirectoryResult {
 
 const api = {
   platform: process.platform,
+  window: {
+    isFullScreen(): Promise<boolean> {
+      return ipcRenderer.invoke('window:is-fullscreen') as Promise<boolean>
+    },
+    onFullScreenChange(callback: (isFullScreen: boolean) => void): ListenerCleanup {
+      const listener = (_event: Electron.IpcRendererEvent, isFullScreen: boolean): void =>
+        callback(isFullScreen)
+      ipcRenderer.on('window:fullscreen-changed', listener)
+      return () => ipcRenderer.removeListener('window:fullscreen-changed', listener)
+    }
+  },
   workspace: {
     pickDirectory(): Promise<PickDirectoryResult> {
       return ipcRenderer.invoke('workspace:pick-directory') as Promise<PickDirectoryResult>

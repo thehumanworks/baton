@@ -109,6 +109,13 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  const broadcastFullScreen = (isFullScreen: boolean): void => {
+    if (!mainWindow || mainWindow.webContents.isDestroyed()) return
+    mainWindow.webContents.send('window:fullscreen-changed', isFullScreen)
+  }
+  mainWindow.on('enter-full-screen', () => broadcastFullScreen(true))
+  mainWindow.on('leave-full-screen', () => broadcastFullScreen(false))
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
@@ -199,6 +206,11 @@ ipcMain.handle('workspace:pick-directory', async (event) => {
   }
 
   return { canceled: false, path: result.filePaths[0] }
+})
+
+ipcMain.handle('window:is-fullscreen', (event) => {
+  const sender = BrowserWindow.fromWebContents(event.sender)
+  return sender ? sender.isFullScreen() : false
 })
 
 ipcMain.handle('terminal:close', (_event, request: TerminalCloseRequest) => {

@@ -12,6 +12,10 @@ interface BatonPickDirectoryResult {
 
 interface BatonBridge {
   platform: NodeJS.Platform
+  window: {
+    isFullScreen(): Promise<boolean>
+    onFullScreenChange(callback: (isFullScreen: boolean) => void): () => void
+  }
   workspace: {
     pickDirectory(): Promise<BatonPickDirectoryResult>
   }
