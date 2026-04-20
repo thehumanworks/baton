@@ -1,4 +1,5 @@
 import type { WorkspaceState } from "../domain";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface WorkspaceSidebarProps {
   workspaces: WorkspaceState[];
@@ -13,17 +14,17 @@ interface WorkspaceSidebarProps {
 }
 
 const SIDEBAR_BASE =
-  "flex flex-col h-full grow-0 shrink-0 z-30 border-r border-panel-border bg-[rgba(10,10,10,0.90)] backdrop-blur-2xl transition-[width,flex-basis] duration-150 ease-out max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:basis-auto max-md:shadow-[24px_0_80px_rgba(0,0,0,0.45)]";
+  "surface-sidebar flex flex-col h-full grow-0 shrink-0 z-30 border-r border-panel-border backdrop-blur-2xl transition-[width,flex-basis] duration-150 ease-out max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:basis-auto max-md:shadow-[24px_0_80px_rgba(0,0,0,0.25)]";
 
 const SIDEBAR_COLLAPSED = "w-[66px] basis-[66px] max-md:w-[58px]";
 const SIDEBAR_COLLAPSED_MAC = "w-[96px] basis-[96px] max-md:w-[88px]";
 const SIDEBAR_EXPANDED = "w-[286px] basis-[286px] max-md:w-[min(82vw,286px)]";
 
 const ICON_BUTTON =
-  "app-region-no-drag chamfer inline-flex items-center justify-center w-9 h-9 min-h-9 px-0 text-lg border border-stone-300/15 bg-stone-950/80 cursor-pointer text-stone-200 hover:border-stone-300/40 hover:bg-stone-900";
+  "app-region-no-drag chamfer surface-btn-secondary inline-flex items-center justify-center w-9 h-9 min-h-9 px-0 text-lg cursor-pointer";
 
 const SECONDARY_BUTTON =
-  "app-region-no-drag chamfer min-h-9 min-w-0 px-1.5 text-[10px] font-medium tracking-[0.01em] text-center border border-stone-300/15 bg-stone-950/80 cursor-pointer text-stone-300 hover:border-stone-300/35 hover:bg-stone-900 hover:text-stone-50 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden whitespace-nowrap text-ellipsis";
+  "app-region-no-drag chamfer surface-btn-secondary min-h-9 min-w-0 px-1.5 text-[10px] font-medium tracking-[0.01em] text-center cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis";
 
 const ITEM_BASE =
   "app-region-no-drag notch w-full flex items-center gap-3 p-2.5 mb-2 text-left border relative";
@@ -31,10 +32,8 @@ const ITEM_BASE =
 const ITEM_COLLAPSED =
   "app-region-no-drag notch flex items-center justify-center w-11 h-11 mx-auto mb-2 border";
 
-const ITEM_INACTIVE =
-  "text-muted-strong border-transparent bg-transparent hover:bg-stone-50/[0.04] hover:text-stone-100";
-const ITEM_ACTIVE =
-  "text-fg border-stone-300/25 bg-stone-50/[0.06]";
+const ITEM_INACTIVE = "surface-item-inactive";
+const ITEM_ACTIVE = "surface-item-active";
 
 export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
   const activeWorkspace = props.workspaces.find((workspace) =>
@@ -72,7 +71,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
             <span className="text-muted text-[10px] tracking-[0.24em]">
               Oracle
             </span>
-            <strong className="text-sm font-semibold tracking-[0.01em] text-stone-100">
+            <strong className="text-sm font-semibold tracking-[0.01em] text-fg">
               Terminal Canvas
             </strong>
           </div>
@@ -101,10 +100,10 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
               {selected && !props.collapsed && (
                 <span
                   aria-hidden
-                  className="absolute left-1 top-2 bottom-5 w-[2px] bg-stone-100"
+                  className="absolute left-1 top-2 bottom-5 w-[2px] bg-fg"
                 />
               )}
-              <span className="chamfer grid place-items-center shrink-0 grow-0 basis-9 w-9 h-9 bg-stone-50/[0.08] text-stone-100 font-semibold tracking-wide">
+              <span className="chamfer surface-item-avatar grid place-items-center shrink-0 grow-0 basis-9 w-9 h-9 font-semibold tracking-wide">
                 {workspace.name.slice(0, 1).toUpperCase()}
               </span>
               {!props.collapsed && (
@@ -127,7 +126,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         <button
           className={`app-region-no-drag btn-primary ${
             props.collapsed ? "blade-compact text-lg leading-none" : "blade px-3 text-[12px] tracking-[0.02em]"
-          } min-h-9 text-stone-950 overflow-hidden whitespace-nowrap`}
+          } min-h-9 overflow-hidden whitespace-nowrap`}
           type="button"
           onClick={props.onAddWorkspace}
           title="New workspace"
@@ -160,6 +159,14 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
             </button>
           </div>
         )}
+        <div className={props.collapsed ? "grid place-items-center" : "grid gap-1.5"}>
+          {!props.collapsed && (
+            <span className="text-muted text-[10px] tracking-[0.12em] uppercase">
+              Theme
+            </span>
+          )}
+          <ThemeToggle compact={props.collapsed} />
+        </div>
       </div>
     </aside>
   );

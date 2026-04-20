@@ -169,20 +169,20 @@ export function Canvas(props: CanvasProps) {
 
   const modePillTone =
     props.terminalMode === "electron" || props.terminalMode === "websocket"
-      ? "text-stone-100 border-stone-300/30"
+      ? "text-fg"
       : props.terminalMode === "demo"
-      ? "text-stone-300 border-stone-300/20"
-      : "text-muted-strong border-stone-300/15";
+      ? "text-muted-strong"
+      : "text-muted";
 
   const modeDot =
     props.terminalMode === "electron" || props.terminalMode === "websocket"
-      ? "bg-stone-100"
+      ? "bg-accent"
       : props.terminalMode === "demo"
-      ? "bg-stone-400"
-      : "bg-stone-600";
+      ? "bg-muted-strong"
+      : "bg-muted";
 
   const segmentBtn =
-    "min-w-[44px] min-h-9 px-3.5 border-0 border-r border-stone-300/10 bg-transparent cursor-pointer text-stone-200 hover:bg-stone-50/5 last:border-r-0 font-medium tracking-wide max-md:min-h-10";
+    "min-w-[44px] min-h-9 px-3.5 border-0 border-r border-panel-border bg-transparent cursor-pointer text-fg hover:bg-[var(--surface-item-hover-bg)] last:border-r-0 font-medium tracking-wide max-md:min-h-10";
 
   return (
     <section className="relative flex-1 min-w-0 min-h-0 grid grid-rows-[1fr]">
@@ -191,7 +191,7 @@ export function Canvas(props: CanvasProps) {
         aria-label="Canvas controls"
       >
         <button
-          className="btn-primary blade min-h-9 px-3.5 text-[12px] tracking-[0.02em] text-stone-950 whitespace-nowrap max-md:min-h-10"
+          className="btn-primary blade min-h-9 px-3.5 text-[12px] tracking-[0.02em] whitespace-nowrap max-md:min-h-10"
           type="button"
           onClick={addTerminalAtCenter}
         >

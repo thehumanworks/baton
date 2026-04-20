@@ -3,14 +3,70 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { useTerminalClient } from "../services/terminalContext";
+import { useThemeContext } from "../services/themeContext";
+import type { AppliedTheme } from "../theme";
 
 interface TerminalPaneProps {
   terminalId: string;
 }
 
+function buildXtermTheme(applied: AppliedTheme): Record<string, string> {
+  if (applied === "light") {
+    return {
+      background: "#fbfaf7",
+      foreground: "#1c1917",
+      cursor: "#1c1917",
+      cursorAccent: "#fbfaf7",
+      selectionBackground: "#d6d3d1",
+      black: "#1c1917",
+      red: "#b91c1c",
+      green: "#15803d",
+      yellow: "#b45309",
+      blue: "#1d4ed8",
+      magenta: "#7c3aed",
+      cyan: "#0e7490",
+      white: "#44403c",
+      brightBlack: "#57534e",
+      brightRed: "#dc2626",
+      brightGreen: "#16a34a",
+      brightYellow: "#d97706",
+      brightBlue: "#2563eb",
+      brightMagenta: "#8b5cf6",
+      brightCyan: "#0891b2",
+      brightWhite: "#1c1917",
+    };
+  }
+
+  return {
+    background: "#0a0a0a",
+    foreground: "#e7e5e4",
+    cursor: "#fafaf9",
+    cursorAccent: "#0a0a0a",
+    selectionBackground: "#404040",
+    black: "#0a0a0a",
+    red: "#a8a29e",
+    green: "#d6d3d1",
+    yellow: "#e7e5e4",
+    blue: "#a8a29e",
+    magenta: "#d6d3d1",
+    cyan: "#e7e5e4",
+    white: "#f5f5f4",
+    brightBlack: "#57534e",
+    brightRed: "#d6d3d1",
+    brightGreen: "#e7e5e4",
+    brightYellow: "#fafaf9",
+    brightBlue: "#d6d3d1",
+    brightMagenta: "#e7e5e4",
+    brightCyan: "#fafaf9",
+    brightWhite: "#fafafa",
+  };
+}
+
 export function TerminalPane({ terminalId }: TerminalPaneProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const client = useTerminalClient();
+  const { appliedTheme } = useThemeContext();
+  const terminalRef = useRef<Terminal | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -26,30 +82,9 @@ export function TerminalPane({ terminalId }: TerminalPaneProps) {
       lineHeight: 1.2,
       scrollback: 10000,
       allowProposedApi: false,
-      theme: {
-        background: "#0a0a0a",
-        foreground: "#e7e5e4",
-        cursor: "#fafaf9",
-        cursorAccent: "#0a0a0a",
-        selectionBackground: "#404040",
-        black: "#0a0a0a",
-        red: "#a8a29e",
-        green: "#d6d3d1",
-        yellow: "#e7e5e4",
-        blue: "#a8a29e",
-        magenta: "#d6d3d1",
-        cyan: "#e7e5e4",
-        white: "#f5f5f4",
-        brightBlack: "#57534e",
-        brightRed: "#d6d3d1",
-        brightGreen: "#e7e5e4",
-        brightYellow: "#fafaf9",
-        brightBlue: "#d6d3d1",
-        brightMagenta: "#e7e5e4",
-        brightCyan: "#fafaf9",
-        brightWhite: "#fafafa",
-      },
+      theme: buildXtermTheme(appliedTheme),
     });
+    terminalRef.current = terminal;
 
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
@@ -95,8 +130,15 @@ export function TerminalPane({ terminalId }: TerminalPaneProps) {
       disposeData();
       disposeExit();
       terminal.dispose();
+      terminalRef.current = null;
     };
   }, [client, terminalId]);
+
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+    terminal.options.theme = buildXtermTheme(appliedTheme);
+  }, [appliedTheme]);
 
   return (
     <div

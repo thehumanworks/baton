@@ -198,7 +198,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
 
   return (
     <article
-      className="notch absolute left-0 top-0 flex flex-col overflow-hidden border border-stone-300/15 bg-stone-950/95 shadow-[0_24px_80px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(245,245,244,0.04)] cursor-default"
+      className="notch surface-window absolute left-0 top-0 flex flex-col overflow-hidden cursor-default"
       data-terminal-window="true"
       style={{
         transform: `translate(${terminal.x}px, ${terminal.y}px)`,
@@ -209,7 +209,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
       onPointerDown={props.onBringToFront}
     >
       <div
-        className="terminal-header-grad shrink-0 grow-0 basis-11 h-11 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 pl-3 pr-5 border-b border-stone-300/10 cursor-grab select-none active:cursor-grabbing max-md:h-12 max-md:basis-12"
+        className="terminal-header-grad surface-window-divider shrink-0 grow-0 basis-11 h-11 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 pl-3 pr-5 cursor-grab select-none active:cursor-grabbing max-md:h-12 max-md:basis-12"
         onPointerDown={startDrag}
         onPointerMove={handleHeaderPointerMove}
         onPointerUp={stopDrag}
@@ -248,7 +248,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
           </button>
         </div>
         <div
-          className="overflow-hidden whitespace-nowrap text-ellipsis text-stone-200 text-[12px] font-medium tracking-wide"
+          className="overflow-hidden whitespace-nowrap text-ellipsis text-fg text-[12px] font-medium tracking-wide"
           title={terminal.title}
           style={{ fontFamily: "var(--font-mono)" }}
         >
@@ -262,7 +262,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
       </div>
 
       {!terminal.minimized && (
-        <div className="min-h-0 flex-1 relative bg-[#0a0a0a]">
+        <div className="min-h-0 flex-1 relative" style={{ background: "var(--terminal-bg)" }}>
           {terminal.terminalId
             ? <TerminalPane terminalId={terminal.terminalId} />
             : (
