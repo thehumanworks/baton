@@ -290,6 +290,25 @@ export function Canvas(props: CanvasProps) {
         Drag to pan · scroll to pan · ⌘/ctrl/alt + scroll to zoom · double-click
         workspace to rename
       </div>
+
+      {(props.workspace.settings.startCommand ||
+        props.workspace.settings.defaultCwd) && (
+        <div
+          className="absolute right-[18px] bottom-4 z-20 flex flex-col items-end gap-0.5 text-muted text-[11px] tracking-[0.02em] font-mono pointer-events-none max-md:hidden"
+          aria-label="Workspace settings summary"
+        >
+          {props.workspace.settings.defaultCwd && (
+            <span className="max-w-[360px] truncate opacity-70">
+              cwd: {props.workspace.settings.defaultCwd}
+            </span>
+          )}
+          {props.workspace.settings.startCommand && (
+            <span className="max-w-[360px] truncate opacity-70">
+              start: {props.workspace.settings.startCommand}
+            </span>
+          )}
+        </div>
+      )}
     </section>
   );
 }
