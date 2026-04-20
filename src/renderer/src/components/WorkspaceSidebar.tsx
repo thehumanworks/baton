@@ -42,7 +42,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
 
   const isMacDesktop =
     typeof window !== "undefined" &&
-    window.oracleTerminal?.platform === "darwin";
+    window.baton?.platform === "darwin";
   const headerClass = isMacDesktop
     ? "app-region-drag flex items-center gap-3 h-[96px] px-3.5 pt-[44px] pb-[18px] border-b border-panel-border"
     : "app-region-drag flex items-center gap-3 h-[72px] px-3.5 py-[18px] border-b border-panel-border";
@@ -84,11 +84,11 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         </button>
         {!props.collapsed && (
           <div className="grid gap-0.5 min-w-0">
-            <span className="text-muted text-[10px] tracking-[0.24em]">
-              Oracle
+            <span className="text-muted text-[10px] tracking-[0.24em] uppercase">
+              Orchestrate terminals
             </span>
             <strong className="text-sm font-semibold tracking-[0.01em] text-fg">
-              Terminal Canvas
+              Baton
             </strong>
           </div>
         )}

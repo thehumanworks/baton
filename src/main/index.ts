@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } from 'electron'
 import path from 'node:path'
 import os from 'node:os'
 import fs from 'node:fs'
@@ -16,6 +16,16 @@ const terminals = new Map<string, pty.IPty>()
 let mainWindow: BrowserWindow | null = null
 
 const isDevelopment = Boolean(process.env.ELECTRON_RENDERER_URL)
+
+function resolveWindowIconPath(): string | null {
+  // In a packaged app, extraResources are placed under process.resourcesPath.
+  // In dev, we fall back to the repo's build/icons/icon.png.
+  const packaged = path.join(process.resourcesPath, 'icon.png')
+  if (fs.existsSync(packaged)) return packaged
+  const dev = path.resolve(__dirname, '../../build/icons/icon.png')
+  if (fs.existsSync(dev)) return dev
+  return null
+}
 
 function getDefaultShell(): string {
   if (process.platform === 'win32') return process.env.ComSpec || 'powershell.exe'
@@ -69,15 +79,19 @@ function resolveWorkspaceCwd(requested?: string): string {
 }
 
 function createWindow(): void {
+  const iconPath = resolveWindowIconPath()
+  const icon = iconPath ? nativeImage.createFromPath(iconPath) : undefined
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
     minWidth: 900,
     minHeight: 600,
-    title: 'Oracle Terminal Canvas',
+    title: 'Baton',
     backgroundColor: '#080b12',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
+    icon,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -85,6 +99,10 @@ function createWindow(): void {
       sandbox: false
     }
   })
+
+  if (isDevelopment && process.platform === 'darwin' && icon && app.dock) {
+    app.dock.setIcon(icon)
+  }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
@@ -97,7 +115,7 @@ function createWindow(): void {
 
   if (isDevelopment && process.env.ELECTRON_RENDERER_URL) {
     void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
-    if (process.env.ORACLE_DEVTOOLS === '1') {
+    if (process.env.BATON_DEVTOOLS === '1') {
       mainWindow.webContents.openDevTools({ mode: 'detach' })
     }
   } else {

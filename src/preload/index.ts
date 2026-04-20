@@ -52,4 +52,4 @@ const api = {
   }
 }
 
-contextBridge.exposeInMainWorld('oracleTerminal', api)
+contextBridge.exposeInMainWorld('baton', api)

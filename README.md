@@ -1,6 +1,12 @@
-# Oracle Terminal Canvas
+# Baton
 
-An Electron + React app for macOS with an infinite canvas of movable, resizable terminal windows. The same renderer also runs as a web/mobile-responsive app.
+<p align="center">
+  <img src="build/baton_logo.webp" alt="Baton logo" width="300" />
+</p>
+
+<p align="center"><strong>Orchestrate terminals.</strong></p>
+
+Baton is an Electron + React desktop app with an infinite canvas of movable, resizable terminal windows. The desktop app runs on macOS, Windows, and Linux, and the same renderer also runs as a web/mobile-responsive app.
 
 ## What is included
 
@@ -9,7 +15,7 @@ An Electron + React app for macOS with an infinite canvas of movable, resizable 
 - Move, resize, minimise, restore, and close terminal windows.
 - Multiple named workspaces, each with its own canvas, viewport, and terminal layout.
 - Collapsible vertical workspace panel on the left.
-- macOS Electron runtime using real pseudo-terminals via `node-pty`.
+- Desktop Electron runtime using real pseudo-terminals via `node-pty` on macOS, Windows, and Linux.
 - Web/mobile renderer with:
   - a safe browser demo terminal by default;
   - optional real terminal support through the included local WebSocket PTY bridge.
@@ -24,14 +30,18 @@ Do not expose the PTY WebSocket server to an untrusted network. It gives clients
 
 ## Prerequisites
 
-- macOS 13+ recommended.
 - Bun 1.3+ recommended.
 - Node.js 22+ recommended.
-- Xcode command line tools for native module compilation:
-
-```bash
-xcode-select --install
-```
+- A C/C++ toolchain for building the `node-pty` native module:
+  - **macOS 13+**: Xcode command line tools.
+    ```bash
+    xcode-select --install
+    ```
+  - **Windows 10/11**: Visual Studio Build Tools (Desktop development with C++) and Python 3. Installing via `npm install --global windows-build-tools` is deprecated; use the Visual Studio Installer instead.
+  - **Linux**: `build-essential`, `python3`, and the X11/keyboard headers, for example on Debian/Ubuntu:
+    ```bash
+    sudo apt-get install -y build-essential python3 libx11-dev libxkbfile-dev
+    ```
 
 ## Install
 
@@ -45,19 +55,33 @@ bun install
 bun x electron-builder install-app-deps
 ```
 
-## Run the macOS Electron app
+## Run the Electron app (macOS, Windows, Linux)
 
 ```bash
 bun run dev
 ```
 
-## Build a macOS app
+## Build a desktop app
+
+Build for the host platform:
 
 ```bash
-bun run dist:mac
+bun run dist
 ```
 
-The packaged app is written to `release/`.
+Build for a specific platform (run each on a matching host, or use the CI workflow described below):
+
+```bash
+bun run dist:mac      # .dmg and .zip for macOS (x64 + arm64)
+bun run dist:win      # NSIS installer and portable .exe for Windows x64
+bun run dist:linux    # AppImage and .deb for Linux x64
+```
+
+The packaged artifacts are written to `release/`.
+
+## Continuous builds on GitHub Actions
+
+The workflow in `.github/workflows/build.yml` builds the app for macOS, Windows, and Linux on every push to `main` (and on pull requests targeting `main`). Each job uploads its installers as a workflow artifact (`baton-macos`, `baton-windows`, `baton-linux`) which you can download from the Actions run summary. The builds are unsigned; see "Notes for production hardening" below for signing and notarization.
 
 ## Run the web/mobile renderer with the demo terminal
 

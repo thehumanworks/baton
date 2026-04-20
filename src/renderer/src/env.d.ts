@@ -5,15 +5,15 @@ import type {
   TerminalExitEvent
 } from '@shared/terminal-types'
 
-interface OraclePickDirectoryResult {
+interface BatonPickDirectoryResult {
   canceled: boolean
   path?: string
 }
 
-interface OracleTerminalBridge {
+interface BatonBridge {
   platform: NodeJS.Platform
   workspace: {
-    pickDirectory(): Promise<OraclePickDirectoryResult>
+    pickDirectory(): Promise<BatonPickDirectoryResult>
   }
   terminal: {
     create(request: TerminalCreateRequest): Promise<TerminalCreateResponse>
@@ -27,7 +27,7 @@ interface OracleTerminalBridge {
 
 declare global {
   interface Window {
-    oracleTerminal?: OracleTerminalBridge
+    baton?: BatonBridge
   }
 
   interface ImportMetaEnv {

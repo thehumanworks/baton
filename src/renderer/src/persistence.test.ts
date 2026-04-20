@@ -67,7 +67,7 @@ describe('persistence theme preference', () => {
 
   test('loadAppState falls back to system for unknown themePreference values', () => {
     storage.setItem(
-      'oracle-terminal-canvas.state.v1',
+      'baton.state.v1',
       JSON.stringify({
         workspaces: [],
         activeWorkspaceId: '',
