@@ -215,27 +215,37 @@ export function TerminalWindow(props: TerminalWindowProps) {
         onPointerUp={stopDrag}
         onPointerCancel={stopDrag}
       >
-        <div className="flex gap-[6px]">
+        <div className="traffic-lights group flex items-center gap-[8px]">
           <button
-            className="w-[11px] h-[11px] p-0 border-0 cursor-pointer bg-stone-300 hover:bg-stone-100 transition-colors"
-            style={{ clipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)" }}
+            className="traffic-light traffic-light--close"
             type="button"
             onClick={props.onClose}
             aria-label="Close terminal"
-          />
+          >
+            <svg viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M2.5 2.5 L7.5 7.5 M7.5 2.5 L2.5 7.5" />
+            </svg>
+          </button>
           <button
-            className="w-[11px] h-[11px] p-0 border-0 cursor-pointer bg-stone-500 hover:bg-stone-300 transition-colors"
+            className="traffic-light traffic-light--minimize"
             type="button"
             onClick={props.onToggleMinimized}
-            aria-label="Minimise terminal"
-          />
+            aria-label={terminal.minimized ? "Restore terminal" : "Minimise terminal"}
+          >
+            <svg viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M2 5 H8" />
+            </svg>
+          </button>
           <button
-            className="w-[11px] h-[11px] p-0 border-0 cursor-pointer bg-stone-700 hover:bg-stone-400 transition-colors"
-            style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%)" }}
+            className="traffic-light traffic-light--zoom"
             type="button"
             onClick={props.onToggleMinimized}
-            aria-label="Restore terminal"
-          />
+            aria-label={terminal.minimized ? "Restore terminal" : "Zoom terminal"}
+          >
+            <svg viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M2.5 2.5 H7.5 V7.5 Z M7.5 7.5 H2.5 V2.5 Z" />
+            </svg>
+          </button>
         </div>
         <div
           className="overflow-hidden whitespace-nowrap text-ellipsis text-stone-200 text-[12px] font-medium tracking-wide"

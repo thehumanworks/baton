@@ -219,6 +219,61 @@ input {
     backdrop-filter: blur(16px);
   }
 
+  /*
+   * macOS-style traffic light window controls.
+   * The glyphs render transparent by default and only fade in when the
+   * user hovers over the cluster, matching the standard macOS affordance.
+   */
+  .traffic-light {
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    border: 0.5px solid rgba(0, 0, 0, 0.25);
+    border-radius: 9999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      inset 0 0.5px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -0.5px 0 rgba(0, 0, 0, 0.2);
+    transition: filter 120ms ease;
+  }
+
+  .traffic-light:focus-visible {
+    outline: 2px solid rgba(245, 245, 244, 0.7);
+    outline-offset: 2px;
+  }
+
+  .traffic-light--close {
+    background: radial-gradient(circle at 35% 30%, #ff7b72 0%, #ff5f57 60%, #e0443e 100%);
+  }
+
+  .traffic-light--minimize {
+    background: radial-gradient(circle at 35% 30%, #ffd66b 0%, #febc2e 60%, #d69d18 100%);
+  }
+
+  .traffic-light--zoom {
+    background: radial-gradient(circle at 35% 30%, #5fe07a 0%, #28c840 60%, #159a2f 100%);
+  }
+
+  .traffic-light svg {
+    width: 8px;
+    height: 8px;
+    stroke: rgba(0, 0, 0, 0.7);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    opacity: 0;
+    transition: opacity 100ms ease;
+  }
+
+  .traffic-lights:hover .traffic-light svg,
+  .traffic-light:focus-visible svg {
+    opacity: 1;
+  }
+
   .resize-handle::after {
     content: "";
     position: absolute;
