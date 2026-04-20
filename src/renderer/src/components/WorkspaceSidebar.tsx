@@ -21,7 +21,7 @@ const SIDEBAR_COLLAPSED_MAC = "w-[96px] basis-[96px] max-md:w-[88px]";
 const SIDEBAR_EXPANDED = "w-[286px] basis-[286px] max-md:w-[min(82vw,286px)]";
 
 const ICON_BUTTON =
-  "app-region-no-drag chamfer surface-btn-secondary inline-flex items-center justify-center w-9 h-9 min-h-9 px-0 text-lg cursor-pointer";
+  "app-region-no-drag chamfer surface-btn-secondary inline-flex items-center justify-center w-9 h-9 min-h-9 px-0 cursor-pointer";
 
 const SECONDARY_BUTTON =
   "app-region-no-drag chamfer surface-btn-secondary min-h-9 min-w-0 px-1.5 text-[10px] font-medium tracking-[0.01em] text-center cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis";
@@ -64,7 +64,23 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
           onClick={props.onToggleCollapsed}
           aria-label="Toggle workspace panel"
         >
-          {props.collapsed ? "›" : "‹"}
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transform: props.collapsed ? "rotate(0deg)" : "rotate(180deg)",
+              transition: "transform 150ms ease-out",
+            }}
+          >
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
         </button>
         {!props.collapsed && (
           <div className="grid gap-0.5 min-w-0">
