@@ -195,6 +195,11 @@ Step 2 is the load-bearing security check: it confirms the strict env
 hygiene from ADR 0001 is actually applied. A regression that spreads
 `process.env` into the WSL spawn would leak Windows PATH here.
 
+The strict env still needs to include the Windows host variables
+`SystemRoot` and `windir` for the `wsl.exe` launcher itself. If WSL exits
+with `Wsl/Service/0x8007072c`, check the unit coverage around
+`resolveShell` before assuming the distro is broken.
+
 Step 5 confirms the `--cd <windows-path>` argument is understood by
 WSL. Older WSL versions do not support `--cd`; if step 5 fails with "WSL
 does not recognise --cd", that is a platform-version issue worth

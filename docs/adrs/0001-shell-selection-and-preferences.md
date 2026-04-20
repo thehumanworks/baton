@@ -90,10 +90,13 @@ message.
 
 For any `shellId` whose kind is `wsl`, the resolver emits
 `wsl.exe -d <distro> --cd <windows cwd>` and attaches a minimal
-environment: `TERM`, `COLORTERM`, `LANG`, `LC_ALL`, and `WSL_UTF8=1`. It
-does **not** spread `process.env`, so Windows-style `PATH` values do not
-leak into the Linux side. Native Windows shells keep the current
-permissive env shape.
+environment: `TERM`, `COLORTERM`, `LANG`, `LC_ALL`, `WSL_UTF8=1`, plus
+the Windows host variables `SystemRoot` and `windir` when present.
+`wsl.exe` is a Windows process before it enters the Linux distribution,
+so those host variables must survive the otherwise strict environment.
+The resolver still does **not** spread `process.env`, so Windows-style
+`PATH` values do not leak into the Linux side. Native Windows shells keep
+the current permissive env shape.
 
 ## Consequences
 

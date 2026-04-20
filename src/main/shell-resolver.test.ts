@@ -170,6 +170,26 @@ describe('resolveShell', () => {
     expect(resolved.env.WSL_UTF8).toBe('1')
   })
 
+  test('wsl shells preserve Windows host env required by wsl.exe', () => {
+    const resolved = resolveShell({
+      id: 'wsl:Ubuntu',
+      registry: windowsRegistry,
+      cwd: 'C:\\Users\\mish',
+      platform: 'win32',
+      env: {
+        PATH: 'C:\\Windows',
+        SystemRoot: 'C:\\Windows',
+        windir: 'C:\\Windows',
+        USERPROFILE: 'C:\\Users\\mish',
+      },
+    })
+
+    expect(resolved.env.SystemRoot).toBe('C:\\Windows')
+    expect(resolved.env.windir).toBe('C:\\Windows')
+    expect(resolved.env.PATH).toBeUndefined()
+    expect(resolved.env.USERPROFILE).toBeUndefined()
+  })
+
   test('wsl shells carry through LANG/LC_ALL when present in incoming env', () => {
     const resolved = resolveShell({
       id: 'wsl:Ubuntu',

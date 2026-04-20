@@ -64,6 +64,7 @@ export interface ResolvedShell {
 }
 
 const WSL_ENV_KEYS = ['LANG', 'LC_ALL'] as const
+const WSL_WINDOWS_HOST_ENV_KEYS = ['SystemRoot', 'windir'] as const
 
 export function resolveShell(input: ResolveInput): ResolvedShell {
   let descriptor = findShell(input.registry, input.id)
@@ -132,6 +133,9 @@ function resolveWsl(
     LC_ALL: input.env.LC_ALL || input.env.LANG || 'en_US.UTF-8',
     WSL_UTF8: '1',
   }
+  for (const key of WSL_WINDOWS_HOST_ENV_KEYS) {
+    copyEnvValue(input.env, env, key)
+  }
   for (const key of WSL_ENV_KEYS) {
     const value = input.env[key]
     if (value) env[key] = value
@@ -153,4 +157,26 @@ function normaliseEnv(env: Record<string, string | undefined>): Record<string, s
     if (typeof value === 'string') out[key] = value
   }
   return out
+}
+
+function copyEnvValue(
+  source: Record<string, string | undefined>,
+  target: Record<string, string>,
+  key: string,
+): void {
+  const direct = source[key]
+  if (typeof direct === 'string' && direct.length > 0) {
+    target[key] = direct
+    return
+  }
+
+  const match = Object.keys(source).find(
+    (candidate) => candidate.toLowerCase() === key.toLowerCase(),
+  )
+  if (!match) return
+
+  const value = source[match]
+  if (typeof value === 'string' && value.length > 0) {
+    target[key] = value
+  }
 }
