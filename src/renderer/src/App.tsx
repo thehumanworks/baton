@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Canvas } from "./components/Canvas";
 import { WorkspaceSidebar } from "./components/WorkspaceSidebar";
 import {
+  AppPreferencesModal,
   ConfirmModal,
+  FirstRunShellPrompt,
   PromptModal,
   WorkspaceSettingsModal,
 } from "./components/Modal";
@@ -15,12 +17,26 @@ import {
   type WorkspaceState,
 } from "./domain";
 import { loadAppState, saveAppState } from "./persistence";
-import { TerminalClientContext } from "./services/terminalContext";
+import { TerminalClientContext, useTerminalClient } from "./services/terminalContext";
 import { createBufferedTerminalClient } from "./services/terminalClient";
 import { ThemeProvider } from "./services/themeContext";
+import { PreferencesProvider, usePreferences } from "./services/preferencesContext";
+import { resolveDefaultShellLabel, shouldShowFirstRunPrompt } from "./services/preferences";
 import type { ThemePreference } from "./theme";
 
 export function App() {
+  const terminalClient = useMemo(() => createBufferedTerminalClient(), []);
+
+  return (
+    <TerminalClientContext.Provider value={terminalClient}>
+      <PreferencesProvider>
+        <AppShell />
+      </PreferencesProvider>
+    </TerminalClientContext.Provider>
+  );
+}
+
+function AppShell() {
   const initialState = useMemo(loadAppState, []);
   const [workspaces, setWorkspaces] = useState<WorkspaceState[]>(
     initialState.workspaces,
@@ -38,7 +54,29 @@ export function App() {
   const [renameTargetId, setRenameTargetId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [settingsTargetId, setSettingsTargetId] = useState<string | null>(null);
-  const terminalClient = useMemo(() => createBufferedTerminalClient(), []);
+  const [appPreferencesOpen, setAppPreferencesOpen] = useState(false);
+  const [firstRunDismissed, setFirstRunDismissed] = useState(false);
+
+  const terminalClient = useTerminalClient();
+  const {
+    preferences,
+    shells,
+    backendDefaultShellId,
+    wasFreshlyCreated,
+    setPreferences,
+  } = usePreferences();
+
+  const platform = window.baton?.platform ?? "darwin";
+  const showFirstRunPrompt = !firstRunDismissed && shouldShowFirstRunPrompt({
+    platform,
+    wasFreshlyCreated,
+    preferences,
+  });
+  const appDefaultShellLabel = resolveDefaultShellLabel(
+    preferences,
+    shells,
+    backendDefaultShellId,
+  );
 
   const activeWorkspace =
     workspaces.find((workspace) => workspace.id === activeWorkspaceId) ??
@@ -258,7 +296,6 @@ export function App() {
       preference={themePreference}
       onPreferenceChange={handleThemeChange}
     >
-    <TerminalClientContext.Provider value={terminalClient}>
       <main className="app-bg flex w-full h-full min-w-0 min-h-0">
         <WorkspaceSidebar
           workspaces={workspaces}
@@ -270,10 +307,12 @@ export function App() {
           onRenameWorkspace={openRenameWorkspace}
           onDeleteWorkspace={openDeleteWorkspace}
           onOpenWorkspaceSettings={openWorkspaceSettings}
+          onOpenAppPreferences={() => setAppPreferencesOpen(true)}
         />
         <Canvas
           workspace={activeWorkspace}
           terminalMode={terminalClient.mode}
+          appDefaultShellId={preferences.terminal.defaultShellId}
           onViewportChange={(viewport) =>
             updateViewport(activeWorkspace.id, viewport)}
           onAddTerminal={(input) => addTerminal(activeWorkspace.id, input)}
@@ -320,10 +359,35 @@ export function App() {
         open={Boolean(settingsTarget)}
         workspaceName={settingsTarget?.name ?? ""}
         initialSettings={settingsTarget?.settings ?? {}}
+        shells={shells}
+        appDefaultShellLabel={appDefaultShellLabel}
         onSubmit={commitWorkspaceSettings}
         onCancel={() => setSettingsTargetId(null)}
       />
-    </TerminalClientContext.Provider>
+      <AppPreferencesModal
+        open={appPreferencesOpen}
+        preferences={preferences}
+        shells={shells}
+        backendDefaultShellId={backendDefaultShellId}
+        onSubmit={async (next) => {
+          await setPreferences(next);
+          setAppPreferencesOpen(false);
+        }}
+        onCancel={() => setAppPreferencesOpen(false)}
+      />
+      <FirstRunShellPrompt
+        open={showFirstRunPrompt}
+        shells={shells}
+        backendDefaultShellId={backendDefaultShellId}
+        onSubmit={async (defaultShellId) => {
+          await setPreferences({
+            version: 1,
+            terminal: { defaultShellId },
+          });
+          setFirstRunDismissed(true);
+        }}
+        onDecideLater={() => setFirstRunDismissed(true)}
+      />
     </ThemeProvider>
   );
 }

@@ -20,6 +20,7 @@ import { TerminalWindow } from "./TerminalWindow";
 interface CanvasProps {
   workspace: WorkspaceState;
   terminalMode: "electron" | "websocket" | "demo";
+  appDefaultShellId: string;
   onViewportChange: (viewport: ViewportState) => void;
   onAddTerminal: (
     input: { x: number; y: number; width?: number; height?: number },
@@ -262,6 +263,7 @@ export function Canvas(props: CanvasProps) {
               terminal={terminal}
               scale={viewport.scale}
               workspaceSettings={props.workspace.settings}
+              appDefaultShellId={props.appDefaultShellId}
               onPatch={(patch) => props.onPatchTerminal(terminal.id, patch)}
               onClose={() => props.onCloseTerminal(terminal.id)}
               onToggleMinimized={() =>

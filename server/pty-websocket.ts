@@ -4,6 +4,8 @@ import path from 'node:path'
 import os from 'node:os'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
+import { detectPreferredShellId, resolveShell } from '../src/main/shell-resolver'
+import { detectShells } from '../src/main/shell-detection'
 
 interface CreateMessage {
   type: 'create'
@@ -11,7 +13,8 @@ interface CreateMessage {
   cols?: number
   rows?: number
   cwd?: string
-  shell?: string
+  shellId?: string
+  wslDistro?: string
 }
 
 interface WriteMessage {
@@ -32,17 +35,18 @@ interface CloseMessage {
   terminalId: string
 }
 
-type ClientMessage = CreateMessage | WriteMessage | ResizeMessage | CloseMessage
+interface ListMessage {
+  type: 'list'
+  clientId: string
+}
+
+type ClientMessage = CreateMessage | WriteMessage | ResizeMessage | CloseMessage | ListMessage
 
 const host = process.env.TERMINAL_WS_HOST || '127.0.0.1'
 const port = Number(process.env.TERMINAL_WS_PORT || 8787)
 const token = process.env.TERMINAL_WS_TOKEN
 
-function getDefaultShell(): string {
-  if (process.platform === 'win32') return process.env.ComSpec || 'powershell.exe'
-  if (process.platform === 'darwin') return process.env.SHELL || '/bin/zsh'
-  return process.env.SHELL || '/bin/bash'
-}
+const shellRegistry = detectShells()
 
 function clampInteger(value: unknown, min: number, max: number, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
@@ -117,27 +121,60 @@ server.on('connection', (socket, request) => {
       return
     }
 
+    if (message.type === 'list') {
+      const defaultShellId = detectPreferredShellId({
+        platform: process.platform,
+        env: process.env,
+        registry: shellRegistry,
+      })
+      send(socket, {
+        type: 'listed',
+        clientId: message.clientId,
+        shells: shellRegistry.map((d) => ({
+          id: d.id,
+          label: d.label,
+          kind: d.kind,
+          ...(d.meta?.wslDistro ? { wslDistro: d.meta.wslDistro } : {}),
+        })),
+        defaultShellId,
+      })
+      return
+    }
+
     if (message.type === 'create') {
       const terminalId = crypto.randomUUID()
-      const shellPath = message.shell || getDefaultShell()
       const cols = clampInteger(message.cols, 10, 500, 100)
       const rows = clampInteger(message.rows, 4, 200, 30)
       const cwd = resolveWorkspaceCwd(message.cwd)
 
       try {
-        const terminal = pty.spawn(shellPath, [], {
+        const requestedId = message.shellId && message.shellId !== 'auto' ? message.shellId : 'auto'
+        if (requestedId !== 'auto' && !shellRegistry.some((d) => d.id === requestedId)) {
+          send(socket, {
+            type: 'error',
+            clientId: message.clientId,
+            message: `Unknown shell id "${requestedId}"`,
+          })
+          return
+        }
+
+        const resolved = resolveShell({
+          id: requestedId,
+          registry: shellRegistry,
+          cwd,
+          platform: process.platform,
+          env: {
+            ...process.env,
+            HOME: process.env.HOME || os.homedir(),
+          },
+        })
+
+        const terminal = pty.spawn(resolved.file, resolved.args, {
           name: 'xterm-256color',
           cols,
           rows,
-          cwd,
-          env: {
-            ...process.env,
-            TERM: 'xterm-256color',
-            COLORTERM: 'truecolor',
-            LANG: process.env.LANG || 'en_US.UTF-8',
-            LC_ALL: process.env.LC_ALL || process.env.LANG || 'en_US.UTF-8',
-            HOME: process.env.HOME || os.homedir()
-          }
+          cwd: resolved.cwd,
+          env: resolved.env,
         })
 
         terminals.set(terminalId, terminal)
@@ -151,9 +188,10 @@ server.on('connection', (socket, request) => {
           type: 'created',
           clientId: message.clientId,
           terminalId,
-          shell: path.basename(shellPath),
+          shell: resolved.descriptor.label,
+          shellId: resolved.descriptor.id,
           pid: terminal.pid,
-          cwd
+          cwd: resolved.cwd,
         })
       } catch (error) {
         send(socket, {

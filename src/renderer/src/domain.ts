@@ -23,6 +23,8 @@ export interface TerminalWindowState {
 export interface WorkspaceSettings {
   startCommand?: string
   defaultCwd?: string
+  shellId?: string
+  wslDistro?: string
 }
 
 export interface WorkspaceState {

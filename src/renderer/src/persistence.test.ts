@@ -79,3 +79,88 @@ describe('persistence theme preference', () => {
     expect(state.themePreference).toBe('system')
   })
 })
+
+describe('persistence workspace shell settings', () => {
+  let storage: StorageShim
+  let restore: () => void
+
+  beforeEach(() => {
+    storage = createStorage()
+    restore = installStorage(storage)
+  })
+
+  afterEach(() => {
+    restore()
+  })
+
+  test('saveAppState round-trips shellId and wslDistro on WorkspaceSettings', () => {
+    const initial = loadAppState()
+    const [workspace] = initial.workspaces
+    const next = {
+      ...initial,
+      workspaces: [
+        {
+          ...workspace,
+          settings: {
+            ...workspace.settings,
+            shellId: 'wsl:Ubuntu',
+            wslDistro: 'Ubuntu',
+          },
+        },
+      ],
+    }
+    saveAppState(next)
+
+    const reloaded = loadAppState()
+    expect(reloaded.workspaces[0]!.settings.shellId).toBe('wsl:Ubuntu')
+    expect(reloaded.workspaces[0]!.settings.wslDistro).toBe('Ubuntu')
+  })
+
+  test('sanitizeSettings discards empty string shellId', () => {
+    storage.setItem(
+      'baton.state.v1',
+      JSON.stringify({
+        workspaces: [
+          {
+            id: 'ws-1',
+            name: 'Main',
+            viewport: { x: 0, y: 0, scale: 1 },
+            terminals: [],
+            settings: { shellId: '  ', wslDistro: '' },
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        activeWorkspaceId: 'ws-1',
+        sidebarCollapsed: false,
+      }),
+    )
+    const state = loadAppState()
+    expect(state.workspaces[0]!.settings.shellId).toBeUndefined()
+    expect(state.workspaces[0]!.settings.wslDistro).toBeUndefined()
+  })
+
+  test('sanitizeSettings rejects non-string shellId values', () => {
+    storage.setItem(
+      'baton.state.v1',
+      JSON.stringify({
+        workspaces: [
+          {
+            id: 'ws-1',
+            name: 'Main',
+            viewport: { x: 0, y: 0, scale: 1 },
+            terminals: [],
+            settings: { shellId: 42, wslDistro: { name: 'Ubuntu' } },
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        activeWorkspaceId: 'ws-1',
+        sidebarCollapsed: false,
+      }),
+    )
+    const state = loadAppState()
+    expect(state.workspaces[0]!.settings.shellId).toBeUndefined()
+    expect(state.workspaces[0]!.settings.wslDistro).toBeUndefined()
+  })
+})

@@ -2,14 +2,28 @@ export interface TerminalCreateRequest {
   cols: number
   rows: number
   cwd?: string
-  shell?: string
+  shellId?: string
+  wslDistro?: string
 }
 
 export interface TerminalCreateResponse {
   terminalId: string
   shell: string
+  shellId: string
   pid?: number
   cwd?: string
+}
+
+export interface ShellDescriptorDTO {
+  id: string
+  label: string
+  kind: 'native' | 'wsl'
+  wslDistro?: string
+}
+
+export interface TerminalListShellsResponse {
+  shells: ShellDescriptorDTO[]
+  defaultShellId: string
 }
 
 export interface TerminalDataEvent {

@@ -2,8 +2,10 @@ import type {
   TerminalCreateRequest,
   TerminalCreateResponse,
   TerminalDataEvent,
-  TerminalExitEvent
+  TerminalExitEvent,
+  TerminalListShellsResponse
 } from '@shared/terminal-types'
+import type { AppPreferences } from '@shared/preferences-types'
 
 interface BatonPickDirectoryResult {
   canceled: boolean
@@ -26,6 +28,12 @@ interface BatonBridge {
     close(terminalId: string): Promise<boolean>
     onData(callback: (event: TerminalDataEvent) => void): () => void
     onExit(callback: (event: TerminalExitEvent) => void): () => void
+    listShells(): Promise<TerminalListShellsResponse>
+  }
+  preferences: {
+    get(): Promise<AppPreferences>
+    set(next: AppPreferences): Promise<AppPreferences>
+    wasFreshlyCreated(): Promise<boolean>
   }
 }
 

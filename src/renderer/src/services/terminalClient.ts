@@ -2,7 +2,8 @@ import type {
   TerminalCreateRequest,
   TerminalCreateResponse,
   TerminalDataEvent,
-  TerminalExitEvent
+  TerminalExitEvent,
+  TerminalListShellsResponse
 } from '@shared/terminal-types'
 import { uid } from '../domain'
 
@@ -18,6 +19,7 @@ export interface TerminalClient {
   close(terminalId: string): Promise<boolean>
   onData(listener: Listener<TerminalDataEvent>): Cleanup
   onExit(listener: Listener<TerminalExitEvent>): Cleanup
+  listShells(): Promise<TerminalListShellsResponse>
 }
 
 class ListenerSet<T> {
@@ -59,6 +61,10 @@ class ElectronTerminalClient implements TerminalClient {
   onExit(listener: Listener<TerminalExitEvent>): Cleanup {
     return window.baton!.terminal.onExit(listener)
   }
+
+  listShells(): Promise<TerminalListShellsResponse> {
+    return window.baton!.terminal.listShells()
+  }
 }
 
 interface ServerMessageCreated {
@@ -66,6 +72,7 @@ interface ServerMessageCreated {
   clientId: string
   terminalId: string
   shell: string
+  shellId: string
   pid?: number
   cwd?: string
 }
@@ -89,7 +96,19 @@ interface ServerMessageError {
   message: string
 }
 
-type ServerMessage = ServerMessageCreated | ServerMessageData | ServerMessageExit | ServerMessageError
+interface ServerMessageListed {
+  type: 'listed'
+  clientId: string
+  shells: TerminalListShellsResponse['shells']
+  defaultShellId: string
+}
+
+type ServerMessage =
+  | ServerMessageCreated
+  | ServerMessageData
+  | ServerMessageExit
+  | ServerMessageError
+  | ServerMessageListed
 
 class WebSocketTerminalClient implements TerminalClient {
   readonly mode = 'websocket' as const
@@ -99,6 +118,11 @@ class WebSocketTerminalClient implements TerminalClient {
   private readonly exitListeners = new ListenerSet<TerminalExitEvent>()
   private readonly pendingCreates = new Map<string, {
     resolve: (response: TerminalCreateResponse) => void
+    reject: (error: Error) => void
+    timeout: number
+  }>()
+  private readonly pendingLists = new Map<string, {
+    resolve: (response: TerminalListShellsResponse) => void
     reject: (error: Error) => void
     timeout: number
   }>()
@@ -146,6 +170,23 @@ class WebSocketTerminalClient implements TerminalClient {
     return this.exitListeners.add(listener)
   }
 
+  async listShells(): Promise<TerminalListShellsResponse> {
+    await this.ensureSocket()
+
+    const clientId = uid('list')
+    const promise = new Promise<TerminalListShellsResponse>((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        this.pendingLists.delete(clientId)
+        reject(new Error('Timed out waiting for shell list'))
+      }, 10000)
+
+      this.pendingLists.set(clientId, { resolve, reject, timeout })
+    })
+
+    this.send({ type: 'list', clientId })
+    return promise
+  }
+
   private async ensureSocket(): Promise<void> {
     if (this.socket?.readyState === WebSocket.OPEN) return
     if (this.connecting) return this.connecting
@@ -172,6 +213,11 @@ class WebSocketTerminalClient implements TerminalClient {
           pending.reject(new Error('Terminal server connection closed'))
         }
         this.pendingCreates.clear()
+        for (const [, pending] of this.pendingLists) {
+          window.clearTimeout(pending.timeout)
+          pending.reject(new Error('Terminal server connection closed'))
+        }
+        this.pendingLists.clear()
       })
 
       socket.addEventListener('error', () => {
@@ -213,9 +259,19 @@ class WebSocketTerminalClient implements TerminalClient {
       pending.resolve({
         terminalId: message.terminalId,
         shell: message.shell,
+        shellId: message.shellId,
         pid: message.pid,
         cwd: message.cwd
       })
+      return
+    }
+
+    if (message.type === 'listed') {
+      const pending = this.pendingLists.get(message.clientId)
+      if (!pending) return
+      window.clearTimeout(pending.timeout)
+      this.pendingLists.delete(message.clientId)
+      pending.resolve({ shells: message.shells, defaultShellId: message.defaultShellId })
       return
     }
 
@@ -230,11 +286,19 @@ class WebSocketTerminalClient implements TerminalClient {
     }
 
     if (message.type === 'error' && message.clientId) {
-      const pending = this.pendingCreates.get(message.clientId)
-      if (!pending) return
-      window.clearTimeout(pending.timeout)
-      this.pendingCreates.delete(message.clientId)
-      pending.reject(new Error(message.message))
+      const pendingCreate = this.pendingCreates.get(message.clientId)
+      if (pendingCreate) {
+        window.clearTimeout(pendingCreate.timeout)
+        this.pendingCreates.delete(message.clientId)
+        pendingCreate.reject(new Error(message.message))
+        return
+      }
+      const pendingList = this.pendingLists.get(message.clientId)
+      if (pendingList) {
+        window.clearTimeout(pendingList.timeout)
+        this.pendingLists.delete(message.clientId)
+        pendingList.reject(new Error(message.message))
+      }
     }
   }
 }
@@ -258,7 +322,15 @@ class DemoTerminalClient implements TerminalClient {
     return {
       terminalId,
       shell: 'demo',
+      shellId: 'demo',
       cwd: '~'
+    }
+  }
+
+  async listShells(): Promise<TerminalListShellsResponse> {
+    return {
+      shells: [{ id: 'demo', label: 'Browser demo', kind: 'native' }],
+      defaultShellId: 'demo'
     }
   }
 
@@ -423,6 +495,10 @@ export class BufferedTerminalClient implements TerminalClient {
 
   onExit(listener: Listener<TerminalExitEvent>): Cleanup {
     return this.exitListeners.add(listener)
+  }
+
+  listShells(): Promise<TerminalListShellsResponse> {
+    return this.inner.listShells()
   }
 
   getBuffer(terminalId: string): string {

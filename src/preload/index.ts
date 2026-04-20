@@ -5,9 +5,11 @@ import type {
   TerminalCreateResponse,
   TerminalDataEvent,
   TerminalExitEvent,
+  TerminalListShellsResponse,
   TerminalResizeRequest,
   TerminalWriteRequest
 } from '../shared/terminal-types'
+import type { AppPreferences } from '../shared/preferences-types'
 
 type ListenerCleanup = () => void
 
@@ -59,6 +61,20 @@ const api = {
       const listener = (_event: Electron.IpcRendererEvent, payload: TerminalExitEvent): void => callback(payload)
       ipcRenderer.on('terminal:exit', listener)
       return () => ipcRenderer.removeListener('terminal:exit', listener)
+    },
+    listShells(): Promise<TerminalListShellsResponse> {
+      return ipcRenderer.invoke('terminal:list-shells') as Promise<TerminalListShellsResponse>
+    }
+  },
+  preferences: {
+    get(): Promise<AppPreferences> {
+      return ipcRenderer.invoke('preferences:get') as Promise<AppPreferences>
+    },
+    set(next: AppPreferences): Promise<AppPreferences> {
+      return ipcRenderer.invoke('preferences:set', next) as Promise<AppPreferences>
+    },
+    wasFreshlyCreated(): Promise<boolean> {
+      return ipcRenderer.invoke('preferences:was-freshly-created') as Promise<boolean>
     }
   }
 }

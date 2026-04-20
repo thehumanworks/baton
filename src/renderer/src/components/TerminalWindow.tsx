@@ -12,6 +12,7 @@ interface TerminalWindowProps {
   terminal: TerminalWindowState;
   scale: number;
   workspaceSettings: WorkspaceSettings;
+  appDefaultShellId: string;
   onPatch: (patch: Partial<TerminalWindowState>) => void;
   onClose: () => void;
   onToggleMinimized: () => void;
@@ -63,8 +64,16 @@ export function TerminalWindow(props: TerminalWindowProps) {
     const settings = settingsRef.current;
     const cwd = settings.defaultCwd?.trim() || undefined;
     const startCommand = settings.startCommand?.trim() || undefined;
+    const effectiveShellId = settings.shellId || props.appDefaultShellId || undefined;
+    const wslDistro = settings.wslDistro || undefined;
 
-    client.createTerminal({ cols: 100, rows: 30, cwd })
+    client.createTerminal({
+      cols: 100,
+      rows: 30,
+      cwd,
+      ...(effectiveShellId ? { shellId: effectiveShellId } : {}),
+      ...(wslDistro ? { wslDistro } : {}),
+    })
       .then((response) => {
         if (cancelled) {
           void client.close(response.terminalId);

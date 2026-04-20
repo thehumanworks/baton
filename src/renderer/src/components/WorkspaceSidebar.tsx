@@ -13,6 +13,7 @@ interface WorkspaceSidebarProps {
   onRenameWorkspace: (workspaceId: string) => void;
   onDeleteWorkspace: (workspaceId: string) => void;
   onOpenWorkspaceSettings: (workspaceId: string) => void;
+  onOpenAppPreferences: () => void;
 }
 
 const SIDEBAR_BASE =
@@ -198,6 +199,16 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
               Delete
             </button>
           </div>
+        )}
+        {!props.collapsed && (
+          <button
+            className={SECONDARY_BUTTON}
+            type="button"
+            onClick={props.onOpenAppPreferences}
+            title="Open app preferences"
+          >
+            Preferences
+          </button>
         )}
         <div className={props.collapsed ? "grid place-items-center" : "grid gap-1.5"}>
           {!props.collapsed && (

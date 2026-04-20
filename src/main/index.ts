@@ -8,12 +8,22 @@ import type {
   TerminalCloseRequest,
   TerminalCreateRequest,
   TerminalCreateResponse,
+  TerminalListShellsResponse,
   TerminalResizeRequest,
   TerminalWriteRequest
 } from '../shared/terminal-types'
+import type { AppPreferences } from '../shared/preferences-types'
+import type { ShellDescriptor } from '../shared/shell-registry'
+import { detectPreferredShellId, resolveShell } from './shell-resolver'
+import { detectShells } from './shell-detection'
+import { createPreferencesStore, migratePreferences, type PreferencesStore } from './preferences'
 
 const terminals = new Map<string, pty.IPty>()
 let mainWindow: BrowserWindow | null = null
+
+let shellRegistry: ShellDescriptor[] = []
+let preferencesStore: PreferencesStore | null = null
+let preferencesWereFreshlyCreated = false
 
 const isDevelopment = Boolean(process.env.ELECTRON_RENDERER_URL)
 
@@ -25,12 +35,6 @@ function resolveWindowIconPath(): string | null {
   const dev = path.resolve(__dirname, '../../build/icons/icon.png')
   if (fs.existsSync(dev)) return dev
   return null
-}
-
-function getDefaultShell(): string {
-  if (process.platform === 'win32') return process.env.ComSpec || 'powershell.exe'
-  if (process.platform === 'darwin') return process.env.SHELL || '/bin/zsh'
-  return process.env.SHELL || '/bin/bash'
 }
 
 function clampInteger(value: unknown, min: number, max: number, fallback: number): number {
@@ -130,26 +134,46 @@ function createWindow(): void {
   }
 }
 
-function createTerminal(event: Electron.IpcMainInvokeEvent, request: TerminalCreateRequest): TerminalCreateResponse {
+async function resolveEffectiveShellId(request: TerminalCreateRequest): Promise<string> {
+  if (request.shellId && request.shellId !== 'auto') return request.shellId
+
+  if (preferencesStore) {
+    const prefs = await preferencesStore.load()
+    if (prefs.terminal.defaultShellId && prefs.terminal.defaultShellId !== 'auto') {
+      return prefs.terminal.defaultShellId
+    }
+  }
+
+  return 'auto'
+}
+
+async function createTerminal(
+  event: Electron.IpcMainInvokeEvent,
+  request: TerminalCreateRequest,
+): Promise<TerminalCreateResponse> {
   const terminalId = crypto.randomUUID()
-  const shellPath = request.shell || getDefaultShell()
   const cols = clampInteger(request.cols, 10, 500, 100)
   const rows = clampInteger(request.rows, 4, 200, 30)
   const cwd = resolveWorkspaceCwd(request.cwd)
 
-  const terminal = pty.spawn(shellPath, [], {
+  const effectiveId = await resolveEffectiveShellId(request)
+  const resolved = resolveShell({
+    id: effectiveId,
+    registry: shellRegistry,
+    cwd,
+    platform: process.platform,
+    env: {
+      ...process.env,
+      HOME: process.env.HOME || os.homedir(),
+    },
+  })
+
+  const terminal = pty.spawn(resolved.file, resolved.args, {
     name: 'xterm-256color',
     cols,
     rows,
-    cwd,
-    env: {
-      ...process.env,
-      TERM: 'xterm-256color',
-      COLORTERM: 'truecolor',
-      LANG: process.env.LANG || 'en_US.UTF-8',
-      LC_ALL: process.env.LC_ALL || process.env.LANG || 'en_US.UTF-8',
-      HOME: process.env.HOME || os.homedir()
-    }
+    cwd: resolved.cwd,
+    env: resolved.env,
   })
 
   terminals.set(terminalId, terminal)
@@ -169,15 +193,48 @@ function createTerminal(event: Electron.IpcMainInvokeEvent, request: TerminalCre
 
   return {
     terminalId,
-    shell: path.basename(shellPath),
+    shell: resolved.descriptor.label,
+    shellId: resolved.descriptor.id,
     pid: terminal.pid,
-    cwd
+    cwd: resolved.cwd,
   }
 }
 
 ipcMain.handle('terminal:create', (event, request: TerminalCreateRequest) => {
   return createTerminal(event, request)
 })
+
+ipcMain.handle('terminal:list-shells', (): TerminalListShellsResponse => {
+  const defaultShellId = detectPreferredShellId({
+    platform: process.platform,
+    env: process.env,
+    registry: shellRegistry,
+  })
+  return {
+    shells: shellRegistry.map((d) => ({
+      id: d.id,
+      label: d.label,
+      kind: d.kind,
+      ...(d.meta?.wslDistro ? { wslDistro: d.meta.wslDistro } : {}),
+    })),
+    defaultShellId,
+  }
+})
+
+ipcMain.handle('preferences:get', async (): Promise<AppPreferences> => {
+  if (!preferencesStore) throw new Error('Preferences not initialised')
+  return preferencesStore.load()
+})
+
+ipcMain.handle('preferences:set', async (_event, next: AppPreferences): Promise<AppPreferences> => {
+  if (!preferencesStore) throw new Error('Preferences not initialised')
+  const migrated = migratePreferences(next)
+  await preferencesStore.save(migrated)
+  preferencesWereFreshlyCreated = false
+  return migrated
+})
+
+ipcMain.handle('preferences:was-freshly-created', (): boolean => preferencesWereFreshlyCreated)
 
 ipcMain.on('terminal:write', (_event, request: TerminalWriteRequest) => {
   if (!request || typeof request.terminalId !== 'string' || typeof request.data !== 'string') return
@@ -239,7 +296,12 @@ function killAllTerminals(): void {
   }
 }
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
+  shellRegistry = detectShells()
+  const preferencesPath = path.join(app.getPath('userData'), 'preferences.json')
+  preferencesStore = createPreferencesStore(preferencesPath)
+  preferencesWereFreshlyCreated = !(await preferencesStore.exists())
+
   createWindow()
 
   app.on('activate', () => {

@@ -25,6 +25,16 @@ function sanitizeSettings(raw: unknown): WorkspaceSettings {
     if (trimmed.length > 0) settings.defaultCwd = trimmed
   }
 
+  if (typeof source.shellId === 'string') {
+    const trimmed = source.shellId.trim()
+    if (trimmed.length > 0) settings.shellId = trimmed
+  }
+
+  if (typeof source.wslDistro === 'string') {
+    const trimmed = source.wslDistro.trim()
+    if (trimmed.length > 0) settings.wslDistro = trimmed
+  }
+
   return settings
 }
 
