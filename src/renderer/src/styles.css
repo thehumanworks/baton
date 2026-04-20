@@ -64,7 +64,6 @@
   --surface-item-hover-bg: rgba(245, 245, 244, 0.04);
   --surface-item-avatar-bg: rgba(245, 245, 244, 0.08);
 
-  --grid-line: rgba(245, 245, 244, 0.025);
   --glow-1: rgba(245, 245, 244, 0.045);
   --glow-2: rgba(214, 211, 209, 0.035);
 
@@ -130,7 +129,6 @@
   --surface-item-hover-bg: rgba(28, 25, 23, 0.04);
   --surface-item-avatar-bg: rgba(28, 25, 23, 0.08);
 
-  --grid-line: rgba(28, 25, 23, 0.06);
   --glow-1: rgba(28, 25, 23, 0.05);
   --glow-2: rgba(28, 25, 23, 0.035);
 
@@ -205,10 +203,6 @@ input {
 
   .canvas-grid {
     background-color: var(--color-canvas);
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 48px 48px;
   }
 
   .terminal-header-grad {
