@@ -43,9 +43,15 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
   const isMacDesktop =
     typeof window !== "undefined" &&
     window.baton?.platform === "darwin";
-  const headerClass = isMacDesktop
-    ? "app-region-drag flex items-center gap-3 h-[96px] px-3.5 pt-[44px] pb-[18px] border-b border-panel-border"
-    : "app-region-drag flex items-center gap-3 h-[72px] px-3.5 py-[18px] border-b border-panel-border";
+  let headerClass: string;
+  if (isMacDesktop) {
+    headerClass = props.collapsed
+      ? "app-region-drag flex items-center justify-center h-[96px] px-2 pt-[44px] pb-[18px] border-b border-panel-border"
+      : "app-region-drag flex items-center gap-3 h-[52px] pl-[82px] pr-3.5 py-2 border-b border-panel-border";
+  } else {
+    headerClass =
+      "app-region-drag flex items-center gap-3 h-[72px] px-3.5 py-[18px] border-b border-panel-border";
+  }
 
   const collapsedSidebarClass = isMacDesktop
     ? SIDEBAR_COLLAPSED_MAC
