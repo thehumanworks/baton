@@ -353,6 +353,15 @@ input {
     );
   }
 
+  /*
+   * Fully rounded pill used for the workspace list entries in the sidebar.
+   * Kept separate from .notch so the angled shell on terminal windows and
+   * modals is unaffected.
+   */
+  .pill-rounded {
+    border-radius: 14px;
+  }
+
   .btn-primary,
   .btn-primary:hover,
   .btn-primary:focus,

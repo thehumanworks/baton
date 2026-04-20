@@ -27,10 +27,10 @@ const SECONDARY_BUTTON =
   "app-region-no-drag chamfer surface-btn-secondary min-h-9 min-w-0 px-1.5 text-[10px] font-medium tracking-[0.01em] text-center cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis";
 
 const ITEM_BASE =
-  "app-region-no-drag notch w-full flex items-center gap-3 p-2.5 mb-2 text-left border relative";
+  "app-region-no-drag pill-rounded w-full flex items-center gap-3 p-2.5 mb-2 text-left border relative";
 
 const ITEM_COLLAPSED =
-  "app-region-no-drag notch flex items-center justify-center w-11 h-11 mx-auto mb-2 border";
+  "app-region-no-drag pill-rounded flex items-center justify-center w-11 h-11 mx-auto mb-2 border";
 
 const ITEM_INACTIVE = "surface-item-inactive";
 const ITEM_ACTIVE = "surface-item-active";
