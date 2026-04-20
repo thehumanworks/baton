@@ -129,7 +129,7 @@ export function WorkspaceSettingsModal(props: WorkspaceSettingsModalProps) {
 
   const canPickDirectory =
     typeof window !== "undefined" &&
-    typeof window.oracleTerminal?.workspace?.pickDirectory === "function";
+    typeof window.baton?.workspace?.pickDirectory === "function";
 
   useEffect(() => {
     if (!props.open) return;
@@ -158,7 +158,7 @@ export function WorkspaceSettingsModal(props: WorkspaceSettingsModalProps) {
   }
 
   async function browseForDirectory(): Promise<void> {
-    const bridge = window.oracleTerminal?.workspace;
+    const bridge = window.baton?.workspace;
     if (!bridge?.pickDirectory) return;
     const result = await bridge.pickDirectory();
     if (!result.canceled && result.path) {

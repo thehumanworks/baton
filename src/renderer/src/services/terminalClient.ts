@@ -37,27 +37,27 @@ class ElectronTerminalClient implements TerminalClient {
   readonly mode = 'electron' as const
 
   createTerminal(request: TerminalCreateRequest): Promise<TerminalCreateResponse> {
-    return window.oracleTerminal!.terminal.create(request)
+    return window.baton!.terminal.create(request)
   }
 
   write(terminalId: string, data: string): void {
-    window.oracleTerminal!.terminal.write(terminalId, data)
+    window.baton!.terminal.write(terminalId, data)
   }
 
   resize(terminalId: string, cols: number, rows: number): void {
-    window.oracleTerminal!.terminal.resize(terminalId, cols, rows)
+    window.baton!.terminal.resize(terminalId, cols, rows)
   }
 
   close(terminalId: string): Promise<boolean> {
-    return window.oracleTerminal!.terminal.close(terminalId)
+    return window.baton!.terminal.close(terminalId)
   }
 
   onData(listener: Listener<TerminalDataEvent>): Cleanup {
-    return window.oracleTerminal!.terminal.onData(listener)
+    return window.baton!.terminal.onData(listener)
   }
 
   onExit(listener: Listener<TerminalExitEvent>): Cleanup {
-    return window.oracleTerminal!.terminal.onExit(listener)
+    return window.baton!.terminal.onExit(listener)
   }
 }
 
@@ -250,7 +250,7 @@ class DemoTerminalClient implements TerminalClient {
     this.lineBuffers.set(terminalId, '')
 
     window.setTimeout(() => {
-      this.emit(terminalId, '\x1b[1;36mOracle Terminal Canvas\x1b[0m browser demo\r\n')
+      this.emit(terminalId, '\x1b[1;36mBaton\x1b[0m browser demo\r\n')
       this.emit(terminalId, 'This renderer is running without Electron or a PTY WebSocket backend.\r\n')
       this.emit(terminalId, 'Type \x1b[33mhelp\x1b[0m. Configure VITE_TERMINAL_WS_URL for real web terminals.\r\n\r\n$ ')
     }, 50)
@@ -431,7 +431,7 @@ export class BufferedTerminalClient implements TerminalClient {
 }
 
 function createBaseTerminalClient(): TerminalClient {
-  if (window.oracleTerminal?.terminal) return new ElectronTerminalClient()
+  if (window.baton?.terminal) return new ElectronTerminalClient()
 
   const wsUrl = import.meta.env.VITE_TERMINAL_WS_URL
   if (wsUrl) return new WebSocketTerminalClient(wsUrl, import.meta.env.VITE_TERMINAL_WS_TOKEN)

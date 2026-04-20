@@ -8,7 +8,7 @@ const withDevTools = args.includes("--with-dev-tools");
 const forwarded = args.filter((arg) => arg !== "--with-dev-tools");
 
 const env = { ...process.env };
-if (withDevTools) env.ORACLE_DEVTOOLS = "1";
+if (withDevTools) env.BATON_DEVTOOLS = "1";
 
 const projectRoot = path.resolve(fileURLToPath(import.meta.url), "../..");
 const cli = path.join(projectRoot, "node_modules", "electron-vite", "bin", "electron-vite.js");

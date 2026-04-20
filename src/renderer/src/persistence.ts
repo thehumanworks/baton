@@ -1,7 +1,7 @@
 import { createWorkspace, type WorkspaceSettings, type WorkspaceState } from './domain'
 import { sanitizeThemePreference, type ThemePreference } from './theme'
 
-const STORAGE_KEY = 'oracle-terminal-canvas.state.v1'
+const STORAGE_KEY = 'baton.state.v1'
 
 export interface PersistedAppState {
   workspaces: WorkspaceState[]
