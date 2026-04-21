@@ -176,6 +176,7 @@ describe('persistence app-state bridge hydration', () => {
 describe('persistence workspace shell settings', () => {
   let storage: StorageShim
   let restore: () => void
+  let restoreWindow: (() => void) | null = null
 
   beforeEach(() => {
     storage = createStorage()
@@ -183,6 +184,8 @@ describe('persistence workspace shell settings', () => {
   })
 
   afterEach(() => {
+    restoreWindow?.()
+    restoreWindow = null
     restore()
   })
 
@@ -257,7 +260,49 @@ describe('persistence workspace shell settings', () => {
     expect(state.workspaces[0]!.settings.wslDistro).toBeUndefined()
   })
 
-  test('saveAppState persists terminalId so sessions can be reattached after relaunch', () => {
+  test('saveAppState strips terminalId on non-Electron runtimes so reload spawns a fresh session', () => {
+    const initial = loadAppState()
+    const [workspace] = initial.workspaces
+
+    saveAppState({
+      ...initial,
+      workspaces: [
+        {
+          ...workspace,
+          terminals: [
+            {
+              id: 'terminal-1',
+              title: 'bash · /tmp',
+              x: 10,
+              y: 20,
+              width: 400,
+              height: 300,
+              z: 1,
+              minimized: false,
+              terminalId: 'session-123',
+              status: 'running',
+              exitCode: null,
+            },
+          ],
+        },
+      ],
+    })
+
+    const reloaded = loadAppState()
+    expect(reloaded.workspaces[0]!.terminals[0]!.terminalId).toBeUndefined()
+    expect(reloaded.workspaces[0]!.terminals[0]!.status).toBe('starting')
+  })
+
+  test('saveAppState preserves terminalId when the Electron app-state bridge is available', () => {
+    restoreWindow = installWindowAppStateBridge({
+      async get() {
+        return null
+      },
+      async set(next: unknown) {
+        return next
+      },
+    })
+
     const initial = loadAppState()
     const [workspace] = initial.workspaces
 
@@ -290,7 +335,55 @@ describe('persistence workspace shell settings', () => {
     expect(reloaded.workspaces[0]!.terminals[0]!.status).toBe('starting')
   })
 
-  test('loadAppState preserves saved terminalId and forces reattach on restore', () => {
+  test('loadAppState strips saved terminalId on non-Electron runtimes', () => {
+    storage.setItem(
+      'baton.state.v1',
+      JSON.stringify({
+        workspaces: [
+          {
+            id: 'ws-1',
+            name: 'Main',
+            viewport: { x: 0, y: 0, scale: 1 },
+            terminals: [
+              {
+                id: 'terminal-1',
+                title: 'bash · /tmp',
+                x: 10,
+                y: 20,
+                width: 400,
+                height: 300,
+                z: 1,
+                minimized: false,
+                terminalId: 'session-restore',
+                status: 'running',
+                exitCode: 0,
+              },
+            ],
+            settings: {},
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        activeWorkspaceId: 'ws-1',
+        sidebarCollapsed: false,
+      }),
+    )
+
+    const state = loadAppState()
+    expect(state.workspaces[0]!.terminals[0]!.terminalId).toBeUndefined()
+    expect(state.workspaces[0]!.terminals[0]!.status).toBe('starting')
+  })
+
+  test('loadAppState preserves saved terminalId and forces reattach on Electron restore', () => {
+    restoreWindow = installWindowAppStateBridge({
+      async get() {
+        return null
+      },
+      async set(next: unknown) {
+        return next
+      },
+    })
+
     storage.setItem(
       'baton.state.v1',
       JSON.stringify({
