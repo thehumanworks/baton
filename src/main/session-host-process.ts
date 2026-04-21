@@ -25,7 +25,9 @@ interface SessionRecord {
 }
 
 const MAX_BUFFER_BYTES = 300_000
-const IDLE_EXIT_MS = Number(process.env.BATON_SESSION_HOST_IDLE_EXIT_MS || 30_000)
+const idleExitMsEnv = process.env.BATON_SESSION_HOST_IDLE_EXIT_MS
+const parsedIdleExitMs = idleExitMsEnv === undefined ? 30_000 : Number(idleExitMsEnv)
+const IDLE_EXIT_MS = Number.isFinite(parsedIdleExitMs) ? parsedIdleExitMs : 30_000
 
 export async function runSessionHost(): Promise<void> {
   const endpoint = process.env.BATON_SESSION_HOST_ENDPOINT
