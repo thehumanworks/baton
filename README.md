@@ -133,6 +133,50 @@ src/shared/               Shared terminal protocol types
 server/pty-websocket.ts   Optional WebSocket PTY bridge for web/mobile
 ```
 
+## Electron preload API example: `window.baton.agentSession`
+
+In the Electron renderer, the preload bridge exposes `window.baton.agentSession` for creating and controlling long-lived local agent-backed shell sessions.
+
+```ts
+const stopData = window.baton.agentSession.onData(({ sessionId, data }) => {
+  console.log(`[agent ${sessionId}]`, data)
+})
+
+const stopExit = window.baton.agentSession.onExit(({ sessionId, exitCode, signal }) => {
+  console.log(`agent exited`, { sessionId, exitCode, signal })
+})
+
+const session = await window.baton.agentSession.create({
+  cols: 120,
+  rows: 30,
+  cwd: '/tmp',
+})
+
+console.log('created session', session.sessionId, session.status, session.cwd)
+console.log('buffered output so far', session.recentOutput)
+
+window.baton.agentSession.write(session.sessionId, 'echo hello from Baton\r')
+window.baton.agentSession.write(session.sessionId, 'pwd\r')
+
+const current = await window.baton.agentSession.get(session.sessionId)
+console.log('current summary', current)
+
+const sessions = await window.baton.agentSession.list()
+console.log('all sessions', sessions.map(({ sessionId, status, cwd }) => ({ sessionId, status, cwd })))
+
+await window.baton.agentSession.close(session.sessionId)
+stopData()
+stopExit()
+```
+
+How data flows in Electron:
+
+- `create()` returns the initial session metadata, including `sessionId`, `status`, and `recentOutput`.
+- `write()` sends input to the session PTY; use `\r` for Enter when sending shell commands.
+- `onData()` streams incremental PTY output as `{ sessionId, data }` events.
+- `onExit()` fires when the backing process exits as `{ sessionId, exitCode, signal }`.
+- `get()` returns the latest known summary for one session, while `list()` returns all tracked sessions, including exited or closed state when available.
+
 ## Notes for production hardening
 
 - Add application signing and notarization for macOS distribution.
