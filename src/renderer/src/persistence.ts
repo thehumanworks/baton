@@ -54,7 +54,14 @@ function sanitizeSettings(raw: unknown): WorkspaceSettings {
   return settings
 }
 
-function sanitizeWorkspace(workspace: WorkspaceState): WorkspaceState {
+function supportsPersistedTerminalReattach(): boolean {
+  return Boolean(globalThis.window?.baton?.appState)
+}
+
+function sanitizeWorkspace(
+  workspace: WorkspaceState,
+  options: { persistTerminalIds: boolean },
+): WorkspaceState {
   return {
     ...workspace,
     viewport: {
@@ -65,7 +72,9 @@ function sanitizeWorkspace(workspace: WorkspaceState): WorkspaceState {
     settings: sanitizeSettings((workspace as { settings?: unknown }).settings),
     terminals: Array.isArray(workspace.terminals)
       ? workspace.terminals.map((terminal, index) => {
-          const terminalId = sanitizeTerminalId(terminal.terminalId)
+          const terminalId = options.persistTerminalIds
+            ? sanitizeTerminalId(terminal.terminalId)
+            : undefined
           return {
             ...terminal,
             title: terminal.title || `Terminal ${index + 1}`,
@@ -79,13 +88,17 @@ function sanitizeWorkspace(workspace: WorkspaceState): WorkspaceState {
   }
 }
 
-export function sanitizePersistedAppState(raw: unknown): PersistedAppState {
+export function sanitizePersistedAppState(
+  raw: unknown,
+  options: { persistTerminalIds?: boolean } = {},
+): PersistedAppState {
   const fallback = createFallbackAppState()
   if (!raw || typeof raw !== 'object') return fallback
 
+  const persistTerminalIds = options.persistTerminalIds ?? supportsPersistedTerminalReattach()
   const parsed = raw as Partial<PersistedAppState>
   const workspaces = Array.isArray(parsed.workspaces) && parsed.workspaces.length > 0
-    ? parsed.workspaces.map(sanitizeWorkspace)
+    ? parsed.workspaces.map((workspace) => sanitizeWorkspace(workspace, { persistTerminalIds }))
     : fallback.workspaces
 
   const activeWorkspaceId = workspaces.some((workspace) => workspace.id === parsed.activeWorkspaceId)
@@ -100,16 +113,26 @@ export function sanitizePersistedAppState(raw: unknown): PersistedAppState {
   }
 }
 
-export function serializeAppState(state: PersistedAppState): PersistedAppState {
+export function serializeAppState(
+  state: PersistedAppState,
+  options: { persistTerminalIds?: boolean } = {},
+): PersistedAppState {
+  const persistTerminalIds = options.persistTerminalIds ?? supportsPersistedTerminalReattach()
+
   return {
     ...state,
     workspaces: state.workspaces.map((workspace) => ({
       ...workspace,
-      terminals: workspace.terminals.map((terminal) => ({
-        ...terminal,
-        terminalId: sanitizeTerminalId(terminal.terminalId),
-        status: terminal.terminalId ? 'starting' : terminal.status === 'exited' ? 'exited' : 'starting',
-      })),
+      terminals: workspace.terminals.map((terminal) => {
+        const terminalId = persistTerminalIds
+          ? sanitizeTerminalId(terminal.terminalId)
+          : undefined
+        return {
+          ...terminal,
+          terminalId,
+          status: terminalId ? 'starting' : terminal.status === 'exited' ? 'exited' : 'starting',
+        }
+      }),
     })),
   }
 }
