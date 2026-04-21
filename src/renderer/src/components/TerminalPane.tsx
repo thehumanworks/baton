@@ -77,7 +77,7 @@ export function TerminalPane({ terminalId }: TerminalPaneProps) {
       cursorStyle: "block",
       convertEol: false,
       fontFamily:
-        '"Terminess Nerd Font Mono", "JetBrainsMono Nerd Font Mono", "FiraCode Nerd Font Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+        '"FiraCode Nerd Font Mono", "JetBrainsMono Nerd Font Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
       fontSize: 14,
       lineHeight: 1.2,
       scrollback: 10000,

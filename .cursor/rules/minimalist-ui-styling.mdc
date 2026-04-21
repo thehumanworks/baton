@@ -1,0 +1,58 @@
+---
+description: UI styling conventions for a minimalistic, flat, and rounded aesthetic
+globs: src/renderer/src/**/*.{css,tsx}
+alwaysApply: false
+---
+
+# Minimalistic UI Styling
+
+When styling UI components in this application, adhere to a flat, clean, and rounded aesthetic. Avoid sharp edges, heavy borders, and prominent solid backgrounds for secondary elements.
+
+## 1. Rounded Edges over Sharp Cuts
+Do not use `clip-path` polygons to create sharp, angled cuts (e.g., "blades" or "notches"). Instead, use smooth `border-radius` values (e.g., `10px`, `12px`, `18px`, or fully rounded).
+
+```css
+/* ❌ BAD */
+.button {
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+}
+
+/* ✅ GOOD */
+.button {
+  border-radius: 10px; /* or 12px, 18px, etc. */
+}
+```
+
+## 2. Flat Controls with Hover Highlights
+Secondary buttons, pills, and toggle controls should sit flat against their container's background. Remove static borders and solid backgrounds. Instead, use transparent backgrounds that reveal a subtle highlight only on hover.
+
+```tsx
+// ❌ BAD
+<button className="border border-panel-border bg-surface-btn text-fg px-3 py-1">
+  Action
+</button>
+
+// ✅ GOOD
+<button className="bg-transparent text-muted hover:text-fg hover:bg-[var(--surface-item-hover-bg)] transition-colors rounded-[10px] px-3 py-1">
+  Action
+</button>
+```
+
+## 3. Active States
+When indicating an active state (like a selected workspace pill), avoid full borders or heavy background fills. Use minimalistic indicators, such as a single colored line or a subtle text color change.
+
+```css
+/* ❌ BAD */
+.item-active {
+  border: 1px solid var(--active-border);
+  background-color: var(--active-bg);
+}
+
+/* ✅ GOOD */
+.item-active {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--color-fg);
+  /* Rely on a pseudo-element or separate indicator line for the active state */
+}
+```
