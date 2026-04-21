@@ -3,11 +3,27 @@ import { sanitizeThemePreference, type ThemePreference } from './theme'
 
 const STORAGE_KEY = 'baton.state.v1'
 
+function sanitizeTerminalId(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined
+  const trimmed = raw.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
 export interface PersistedAppState {
   workspaces: WorkspaceState[]
   activeWorkspaceId: string
   sidebarCollapsed: boolean
   themePreference: ThemePreference
+}
+
+function createFallbackAppState(): PersistedAppState {
+  const fallbackWorkspace = createWorkspace('Main')
+  return {
+    workspaces: [fallbackWorkspace],
+    activeWorkspaceId: fallbackWorkspace.id,
+    sidebarCollapsed: false,
+    themePreference: sanitizeThemePreference(undefined),
+  }
 }
 
 function sanitizeSettings(raw: unknown): WorkspaceSettings {
@@ -44,73 +60,101 @@ function sanitizeWorkspace(workspace: WorkspaceState): WorkspaceState {
     viewport: {
       x: Number.isFinite(workspace.viewport?.x) ? workspace.viewport.x : 160,
       y: Number.isFinite(workspace.viewport?.y) ? workspace.viewport.y : 120,
-      scale: Number.isFinite(workspace.viewport?.scale) ? workspace.viewport.scale : 1
+      scale: Number.isFinite(workspace.viewport?.scale) ? workspace.viewport.scale : 1,
     },
     settings: sanitizeSettings((workspace as { settings?: unknown }).settings),
     terminals: Array.isArray(workspace.terminals)
-      ? workspace.terminals.map((terminal, index) => ({
-          ...terminal,
-          title: terminal.title || `Terminal ${index + 1}`,
-          terminalId: undefined,
-          status: 'starting',
-          minimized: Boolean(terminal.minimized),
-          z: Number.isFinite(terminal.z) ? terminal.z : index + 1
-        }))
-      : []
+      ? workspace.terminals.map((terminal, index) => {
+          const terminalId = sanitizeTerminalId(terminal.terminalId)
+          return {
+            ...terminal,
+            title: terminal.title || `Terminal ${index + 1}`,
+            terminalId,
+            status: terminalId ? 'starting' : terminal.status === 'exited' ? 'exited' : 'starting',
+            minimized: Boolean(terminal.minimized),
+            z: Number.isFinite(terminal.z) ? terminal.z : index + 1,
+          }
+        })
+      : [],
   }
 }
 
-export function loadAppState(): PersistedAppState {
-  const fallbackWorkspace = createWorkspace('Main')
+export function sanitizePersistedAppState(raw: unknown): PersistedAppState {
+  const fallback = createFallbackAppState()
+  if (!raw || typeof raw !== 'object') return fallback
 
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) {
-      return {
-        workspaces: [fallbackWorkspace],
-        activeWorkspaceId: fallbackWorkspace.id,
-        sidebarCollapsed: false,
-        themePreference: sanitizeThemePreference(undefined)
-      }
-    }
+  const parsed = raw as Partial<PersistedAppState>
+  const workspaces = Array.isArray(parsed.workspaces) && parsed.workspaces.length > 0
+    ? parsed.workspaces.map(sanitizeWorkspace)
+    : fallback.workspaces
 
-    const parsed = JSON.parse(raw) as Partial<PersistedAppState>
-    const workspaces = Array.isArray(parsed.workspaces) && parsed.workspaces.length > 0
-      ? parsed.workspaces.map(sanitizeWorkspace)
-      : [fallbackWorkspace]
+  const activeWorkspaceId = workspaces.some((workspace) => workspace.id === parsed.activeWorkspaceId)
+    ? String(parsed.activeWorkspaceId)
+    : workspaces[0].id
 
-    const activeWorkspaceId = workspaces.some((workspace) => workspace.id === parsed.activeWorkspaceId)
-      ? String(parsed.activeWorkspaceId)
-      : workspaces[0].id
-
-    return {
-      workspaces,
-      activeWorkspaceId,
-      sidebarCollapsed: Boolean(parsed.sidebarCollapsed),
-      themePreference: sanitizeThemePreference(parsed.themePreference)
-    }
-  } catch {
-    return {
-      workspaces: [fallbackWorkspace],
-      activeWorkspaceId: fallbackWorkspace.id,
-      sidebarCollapsed: false,
-      themePreference: sanitizeThemePreference(undefined)
-    }
+  return {
+    workspaces,
+    activeWorkspaceId,
+    sidebarCollapsed: Boolean(parsed.sidebarCollapsed),
+    themePreference: sanitizeThemePreference(parsed.themePreference),
   }
 }
 
-export function saveAppState(state: PersistedAppState): void {
-  const serializable: PersistedAppState = {
+export function serializeAppState(state: PersistedAppState): PersistedAppState {
+  return {
     ...state,
     workspaces: state.workspaces.map((workspace) => ({
       ...workspace,
       terminals: workspace.terminals.map((terminal) => ({
         ...terminal,
-        terminalId: undefined,
-        status: terminal.status === 'exited' ? 'exited' : 'starting'
-      }))
-    }))
+        terminalId: sanitizeTerminalId(terminal.terminalId),
+        status: terminal.terminalId ? 'starting' : terminal.status === 'exited' ? 'exited' : 'starting',
+      })),
+    })),
   }
+}
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable))
+function loadFromLocalStorage(): PersistedAppState {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return createFallbackAppState()
+    return sanitizePersistedAppState(JSON.parse(raw) as unknown)
+  } catch {
+    return createFallbackAppState()
+  }
+}
+
+function saveToLocalStorage(state: PersistedAppState): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+}
+
+export function loadAppState(): PersistedAppState {
+  return loadFromLocalStorage()
+}
+
+export async function hydrateAppState(): Promise<PersistedAppState | null> {
+  const bridge = globalThis.window?.baton?.appState
+  if (!bridge) return null
+
+  try {
+    const raw = await bridge.get()
+    if (raw === null) return null
+    const hydrated = sanitizePersistedAppState(raw)
+    saveToLocalStorage(hydrated)
+    return hydrated
+  } catch {
+    return null
+  }
+}
+
+export function saveAppState(state: PersistedAppState): void {
+  const serializable = serializeAppState(state)
+  saveToLocalStorage(serializable)
+
+  const bridge = globalThis.window?.baton?.appState
+  if (bridge) {
+    void bridge.set(serializable).catch(() => {
+      // Keep local cache even if the main-process save fails.
+    })
+  }
 }

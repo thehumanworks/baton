@@ -1,4 +1,5 @@
 import type {
+  TerminalAttachResponse,
   TerminalCreateRequest,
   TerminalCreateResponse,
   TerminalDataEvent,
@@ -23,6 +24,7 @@ interface BatonBridge {
   }
   terminal: {
     create(request: TerminalCreateRequest): Promise<TerminalCreateResponse>
+    attach(terminalId: string): Promise<TerminalAttachResponse>
     write(terminalId: string, data: string): void
     resize(terminalId: string, cols: number, rows: number): void
     close(terminalId: string): Promise<boolean>
@@ -34,6 +36,10 @@ interface BatonBridge {
     get(): Promise<AppPreferences>
     set(next: AppPreferences): Promise<AppPreferences>
     wasFreshlyCreated(): Promise<boolean>
+  }
+  appState: {
+    get(): Promise<unknown | null>
+    set(next: unknown): Promise<unknown>
   }
 }
 

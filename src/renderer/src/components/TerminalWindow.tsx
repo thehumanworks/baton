@@ -53,13 +53,36 @@ export function TerminalWindow(props: TerminalWindowProps) {
   }, [props.workspaceSettings]);
 
   useEffect(() => {
-    if (
-      terminal.terminalId || hasStartedRef.current ||
-      terminal.status === "exited"
-    ) return;
+    if (hasStartedRef.current || terminal.status !== "starting") return;
     hasStartedRef.current = true;
 
     let cancelled = false;
+
+    if (terminal.terminalId) {
+      client.attachTerminal(terminal.terminalId)
+        .then((response) => {
+          if (cancelled) return;
+
+          onPatchRef.current({
+            title: `${response.shell} · ${response.cwd ?? "~"}`,
+            status: response.status,
+            exitCode: response.exitCode,
+          });
+        })
+        .catch((error: unknown) => {
+          hasStartedRef.current = false;
+          onPatchRef.current({
+            status: "error",
+            title: error instanceof Error
+              ? error.message
+              : "Terminal session is unavailable",
+          });
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const settings = settingsRef.current;
     const cwd = settings.defaultCwd?.trim() || undefined;
@@ -84,6 +107,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
           terminalId: response.terminalId,
           title: `${response.shell} · ${response.cwd ?? "~"}`,
           status: "running",
+          exitCode: null,
         });
 
         if (startCommand) {
@@ -106,7 +130,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
     return () => {
       cancelled = true;
     };
-  }, [client, terminal.status, terminal.terminalId]);
+  }, [client, props.appDefaultShellId, terminal.status, terminal.terminalId]);
 
   function startDrag(event: PointerEvent<HTMLDivElement>): void {
     const target = event.target as HTMLElement;
@@ -272,11 +296,11 @@ export function TerminalWindow(props: TerminalWindowProps) {
 
       {!terminal.minimized && (
         <div className="min-h-0 flex-1 relative" style={{ background: "var(--terminal-bg)" }}>
-          {terminal.terminalId
+          {terminal.terminalId && terminal.status !== "starting"
             ? <TerminalPane terminalId={terminal.terminalId} />
             : (
               <div className="h-full grid place-items-center text-muted text-[12px] tracking-[0.02em]">
-                Starting terminal…
+                {terminal.status === "error" ? "Terminal unavailable" : "Starting terminal…"}
               </div>
             )}
         </div>
