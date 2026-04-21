@@ -183,7 +183,7 @@ export function Canvas(props: CanvasProps) {
       : "bg-muted";
 
   const segmentBtn =
-    "min-w-[44px] min-h-9 px-3.5 border-0 border-r border-panel-border bg-transparent cursor-pointer text-fg hover:bg-[var(--surface-item-hover-bg)] last:border-r-0 font-medium tracking-wide max-md:min-h-10";
+    "min-w-[44px] min-h-9 px-3.5 border-0 bg-transparent cursor-pointer text-muted hover:text-fg hover:bg-[var(--surface-item-hover-bg)] font-medium tracking-wide max-md:min-h-10 rounded-[10px] transition-colors";
 
   return (
     <section className="relative flex-1 min-w-0 min-h-0 grid grid-rows-[1fr]">
@@ -191,15 +191,23 @@ export function Canvas(props: CanvasProps) {
         className="absolute top-4 left-4 z-20 flex items-center flex-wrap gap-2.5 pointer-events-auto max-md:left-[70px] max-md:right-2.5 max-md:top-2.5 max-md:gap-2"
         aria-label="Canvas controls"
       >
+        <div className="inline-flex items-center min-h-8 gap-2.5 px-3.5 mr-2 max-md:hidden">
+          <strong className="text-sm font-semibold tracking-[0.01em] text-fg">
+            Baton
+          </strong>
+          <span className="text-muted text-[10px] tracking-[0.24em] uppercase">
+            Orchestrate terminals
+          </span>
+        </div>
         <button
-          className="btn-primary blade min-h-9 px-3.5 text-[12px] tracking-[0.02em] whitespace-nowrap max-md:min-h-10"
+          className="flex items-center justify-center gap-2 text-muted hover:text-fg hover:bg-[var(--surface-item-hover-bg)] transition-colors min-h-9 rounded-[10px] px-3.5 text-[12px] tracking-[0.02em] whitespace-nowrap max-md:min-h-10"
           type="button"
           onClick={addTerminalAtCenter}
         >
           Spawn Terminal
         </button>
         <div
-          className="stone-frame blade flex items-center overflow-hidden"
+          className="flex items-center gap-0.5"
           role="group"
           aria-label="Zoom controls"
         >
@@ -228,7 +236,7 @@ export function Canvas(props: CanvasProps) {
           </button>
         </div>
         <span
-          className={`stone-frame chamfer inline-flex items-center min-h-8 gap-2 px-3.5 text-[11px] tracking-[0.02em] font-medium max-md:hidden ${modePillTone}`}
+          className={`inline-flex items-center min-h-8 gap-2 px-3.5 text-[11px] tracking-[0.02em] font-medium max-md:hidden ${modePillTone}`}
         >
           <span className={`w-1.5 h-1.5 rounded-full ${modeDot}`} aria-hidden />
           {props.terminalMode === "electron"
@@ -288,7 +296,7 @@ export function Canvas(props: CanvasProps) {
         )}
       </div>
 
-      <div className="stone-frame chamfer-l absolute left-[18px] bottom-4 z-20 px-3.5 py-2 text-muted text-[11px] tracking-[0.02em] pointer-events-none max-md:hidden">
+      <div className="absolute left-[18px] bottom-4 z-20 px-3.5 py-2 text-muted text-[11px] tracking-[0.02em] pointer-events-none max-md:hidden">
         Drag to pan · scroll to pan · ⌘/ctrl/alt + scroll to zoom · double-click
         workspace to rename
       </div>
