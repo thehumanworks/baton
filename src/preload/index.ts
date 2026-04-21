@@ -1,5 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
+  AgentSessionCloseRequest,
+  AgentSessionCreateRequest,
+  AgentSessionCreateResponse,
+  AgentSessionDataEvent,
+  AgentSessionExitEvent,
+  AgentSessionGetRequest,
+  AgentSessionResizeRequest,
+  AgentSessionSummary,
+  AgentSessionWriteRequest,
   TerminalCloseRequest,
   TerminalCreateRequest,
   TerminalCreateResponse,
@@ -65,6 +74,40 @@ const api = {
     listShells(): Promise<TerminalListShellsResponse> {
       return ipcRenderer.invoke('terminal:list-shells') as Promise<TerminalListShellsResponse>
     }
+  },
+  agentSession: {
+    create(request: AgentSessionCreateRequest): Promise<AgentSessionCreateResponse> {
+      return ipcRenderer.invoke('agentSession:create', request) as Promise<AgentSessionCreateResponse>
+    },
+    list(): Promise<AgentSessionSummary[]> {
+      return ipcRenderer.invoke('agentSession:list') as Promise<AgentSessionSummary[]>
+    },
+    get(sessionId: string): Promise<AgentSessionSummary | null> {
+      const payload: AgentSessionGetRequest = { sessionId }
+      return ipcRenderer.invoke('agentSession:get', payload) as Promise<AgentSessionSummary | null>
+    },
+    write(sessionId: string, data: string): void {
+      const payload: AgentSessionWriteRequest = { sessionId, data }
+      ipcRenderer.send('agentSession:write', payload)
+    },
+    resize(sessionId: string, cols: number, rows: number): void {
+      const payload: AgentSessionResizeRequest = { sessionId, cols, rows }
+      ipcRenderer.send('agentSession:resize', payload)
+    },
+    close(sessionId: string): Promise<boolean> {
+      const payload: AgentSessionCloseRequest = { sessionId }
+      return ipcRenderer.invoke('agentSession:close', payload) as Promise<boolean>
+    },
+    onData(callback: (event: AgentSessionDataEvent) => void): ListenerCleanup {
+      const listener = (_event: Electron.IpcRendererEvent, payload: AgentSessionDataEvent): void => callback(payload)
+      ipcRenderer.on('agentSession:data', listener)
+      return () => ipcRenderer.removeListener('agentSession:data', listener)
+    },
+    onExit(callback: (event: AgentSessionExitEvent) => void): ListenerCleanup {
+      const listener = (_event: Electron.IpcRendererEvent, payload: AgentSessionExitEvent): void => callback(payload)
+      ipcRenderer.on('agentSession:exit', listener)
+      return () => ipcRenderer.removeListener('agentSession:exit', listener)
+    },
   },
   preferences: {
     get(): Promise<AppPreferences> {

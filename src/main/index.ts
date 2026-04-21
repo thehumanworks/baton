@@ -5,6 +5,11 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import * as pty from 'node-pty'
 import type {
+  AgentSessionCloseRequest,
+  AgentSessionCreateRequest,
+  AgentSessionGetRequest,
+  AgentSessionResizeRequest,
+  AgentSessionWriteRequest,
   TerminalCloseRequest,
   TerminalCreateRequest,
   TerminalCreateResponse,
@@ -17,6 +22,7 @@ import type { ShellDescriptor } from '../shared/shell-registry'
 import { detectPreferredShellId, resolveShell } from './shell-resolver'
 import { detectShells } from './shell-detection'
 import { createPreferencesStore, migratePreferences, type PreferencesStore } from './preferences'
+import { AgentSessionManager } from './agent-session-manager'
 
 const terminals = new Map<string, pty.IPty>()
 let mainWindow: BrowserWindow | null = null
@@ -24,6 +30,7 @@ let mainWindow: BrowserWindow | null = null
 let shellRegistry: ShellDescriptor[] = []
 let preferencesStore: PreferencesStore | null = null
 let preferencesWereFreshlyCreated = false
+let agentSessionManager: AgentSessionManager | null = null
 
 const isDevelopment = Boolean(process.env.ELECTRON_RENDERER_URL)
 
@@ -200,6 +207,13 @@ async function createTerminal(
   }
 }
 
+function getAgentSessionManager(): AgentSessionManager {
+  if (!agentSessionManager) {
+    throw new Error('Agent session manager not initialised')
+  }
+  return agentSessionManager
+}
+
 ipcMain.handle('terminal:create', (event, request: TerminalCreateRequest) => {
   return createTerminal(event, request)
 })
@@ -219,6 +233,19 @@ ipcMain.handle('terminal:list-shells', (): TerminalListShellsResponse => {
     })),
     defaultShellId,
   }
+})
+
+ipcMain.handle('agentSession:create', (_event, request: AgentSessionCreateRequest) => {
+  return getAgentSessionManager().create(request)
+})
+
+ipcMain.handle('agentSession:list', () => {
+  return getAgentSessionManager().list()
+})
+
+ipcMain.handle('agentSession:get', (_event, request: AgentSessionGetRequest) => {
+  if (!request || typeof request.sessionId !== 'string') return null
+  return getAgentSessionManager().get(request)
 })
 
 ipcMain.handle('preferences:get', async (): Promise<AppPreferences> => {
@@ -250,6 +277,16 @@ ipcMain.on('terminal:resize', (_event, request: TerminalResizeRequest) => {
   const cols = clampInteger(request.cols, 10, 500, 100)
   const rows = clampInteger(request.rows, 4, 200, 30)
   terminal.resize(cols, rows)
+})
+
+ipcMain.on('agentSession:write', (_event, request: AgentSessionWriteRequest) => {
+  if (!request || typeof request.sessionId !== 'string' || typeof request.data !== 'string') return
+  getAgentSessionManager().write(request.sessionId, request.data)
+})
+
+ipcMain.on('agentSession:resize', (_event, request: AgentSessionResizeRequest) => {
+  if (!request || typeof request.sessionId !== 'string') return
+  getAgentSessionManager().resize(request.sessionId, request.cols, request.rows)
 })
 
 ipcMain.handle('workspace:pick-directory', async (event) => {
@@ -284,6 +321,11 @@ ipcMain.handle('terminal:close', (_event, request: TerminalCloseRequest) => {
   return true
 })
 
+ipcMain.handle('agentSession:close', (_event, request: AgentSessionCloseRequest) => {
+  if (!request || typeof request.sessionId !== 'string') return false
+  return getAgentSessionManager().close(request.sessionId)
+})
+
 function killAllTerminals(): void {
   for (const [terminalId, terminal] of terminals) {
     try {
@@ -294,6 +336,8 @@ function killAllTerminals(): void {
       terminals.delete(terminalId)
     }
   }
+
+  agentSessionManager?.closeAll()
 }
 
 void app.whenReady().then(async () => {
@@ -301,6 +345,25 @@ void app.whenReady().then(async () => {
   const preferencesPath = path.join(app.getPath('userData'), 'preferences.json')
   preferencesStore = createPreferencesStore(preferencesPath)
   preferencesWereFreshlyCreated = !(await preferencesStore.exists())
+
+  agentSessionManager = new AgentSessionManager({
+    spawn: (file, args, options) => pty.spawn(file, args, options),
+    resolveEffectiveShellId,
+    resolveWorkspaceCwd,
+    shellRegistry,
+    platform: process.platform,
+    env: process.env,
+    onData: ({ sessionId, data }) => {
+      if (mainWindow && !mainWindow.webContents.isDestroyed()) {
+        mainWindow.webContents.send('agentSession:data', { sessionId, data })
+      }
+    },
+    onExit: ({ sessionId, exitCode, signal }) => {
+      if (mainWindow && !mainWindow.webContents.isDestroyed()) {
+        mainWindow.webContents.send('agentSession:exit', { sessionId, exitCode, signal })
+      }
+    },
+  })
 
   createWindow()
 

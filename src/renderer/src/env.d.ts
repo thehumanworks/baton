@@ -1,4 +1,9 @@
 import type {
+  AgentSessionCreateRequest,
+  AgentSessionCreateResponse,
+  AgentSessionDataEvent,
+  AgentSessionExitEvent,
+  AgentSessionSummary,
   TerminalCreateRequest,
   TerminalCreateResponse,
   TerminalDataEvent,
@@ -29,6 +34,16 @@ interface BatonBridge {
     onData(callback: (event: TerminalDataEvent) => void): () => void
     onExit(callback: (event: TerminalExitEvent) => void): () => void
     listShells(): Promise<TerminalListShellsResponse>
+  }
+  agentSession: {
+    create(request: AgentSessionCreateRequest): Promise<AgentSessionCreateResponse>
+    list(): Promise<AgentSessionSummary[]>
+    get(sessionId: string): Promise<AgentSessionSummary | null>
+    write(sessionId: string, data: string): void
+    resize(sessionId: string, cols: number, rows: number): void
+    close(sessionId: string): Promise<boolean>
+    onData(callback: (event: AgentSessionDataEvent) => void): () => void
+    onExit(callback: (event: AgentSessionExitEvent) => void): () => void
   }
   preferences: {
     get(): Promise<AppPreferences>
