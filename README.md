@@ -28,6 +28,19 @@ A normal web page or mobile browser cannot directly spawn a local macOS shell. F
 
 Do not expose the PTY WebSocket server to an untrusted network. It gives clients shell access on the machine where the server runs.
 
+## Current persistence model
+
+On the Electron desktop runtime, Baton now keeps PTYs in a detached local session host instead of inside Electron main. That means:
+
+- switching workspaces keeps the same live shell session;
+- quitting and reopening Baton reattaches to the same live shell session on the same machine/user account;
+- closing a terminal window still kills that specific session;
+- deleting a workspace still kills the sessions owned by that workspace.
+
+Workspace/layout metadata is now persisted to an app-owned JSON store under Electron `userData` and mirrored into renderer `localStorage` as a cache for fast boot. The web/mobile WebSocket backend still behaves differently: it does not yet support attach/reattach of existing sessions across browser reconnects.
+
+The design rationale and future hardening path are documented in `docs/adrs/0002-terminal-session-persistence.md`.
+
 ## Prerequisites
 
 - Bun 1.3+ recommended.
@@ -81,7 +94,7 @@ The packaged artifacts are written to `release/`.
 
 ## Continuous builds on GitHub Actions
 
-The workflow in `.github/workflows/build.yml` builds the app for macOS, Windows, and Linux on every push to `main` (and on pull requests targeting `main`). Each job uploads its installers as a workflow artifact (`baton-macos`, `baton-windows`, `baton-linux`) which you can download from the Actions run summary. The builds are unsigned; see "Notes for production hardening" below for signing and notarization.
+The workflow in `.github/workflows/build.yml` builds the app for macOS, Windows, and Linux on every push to `main` (and on pull requests targeting `main`). It now also runs `bun test`, `bun run typecheck`, and, on macOS/Linux, the Electron session-persistence verification before packaging. Each job uploads its installers as a workflow artifact (`baton-macos`, `baton-windows`, `baton-linux`) which you can download from the Actions run summary. The builds are unsigned; see "Notes for production hardening" below for signing and notarization.
 
 ## Run the web/mobile renderer with the demo terminal
 
@@ -126,16 +139,17 @@ Again: only do this on a trusted network.
 ## Project structure
 
 ```text
-src/main/                 Electron main process; owns real PTYs
+src/main/                 Electron main process, detached session host, and JSON stores
 src/preload/              Safe bridge between renderer and Electron IPC
 src/renderer/             React canvas UI; also builds for web/mobile
-src/shared/               Shared terminal protocol types
+src/shared/               Shared terminal/session protocol types
 server/pty-websocket.ts   Optional WebSocket PTY bridge for web/mobile
+scripts/verify-session-persistence.mjs  Built-runtime verification for Electron session reattach
 ```
 
 ## Notes for production hardening
 
 - Add application signing and notarization for macOS distribution.
 - Replace the demo PTY WebSocket server with an authenticated, audited backend if web terminals are needed outside localhost.
-- Consider workspace persistence in SQLite or a local JSON store if layouts should survive localStorage clearing.
-- Add terminal session restoration if you need buffer/process persistence across app restarts.
+- Harden the detached session host further (crash recovery, TTL/GC, optional disk-backed scrollback, and WebSocket attach support); see `docs/adrs/0002-terminal-session-persistence.md`.
+- Consider making the WebSocket backend share the same durable session model if browser reconnect reattach becomes a product requirement.

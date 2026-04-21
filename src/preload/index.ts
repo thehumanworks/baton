@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
+  TerminalAttachRequest,
+  TerminalAttachResponse,
   TerminalCloseRequest,
   TerminalCreateRequest,
   TerminalCreateResponse,
@@ -40,6 +42,10 @@ const api = {
     create(request: TerminalCreateRequest): Promise<TerminalCreateResponse> {
       return ipcRenderer.invoke('terminal:create', request) as Promise<TerminalCreateResponse>
     },
+    attach(terminalId: string): Promise<TerminalAttachResponse> {
+      const payload: TerminalAttachRequest = { terminalId }
+      return ipcRenderer.invoke('terminal:attach', payload) as Promise<TerminalAttachResponse>
+    },
     write(terminalId: string, data: string): void {
       const payload: TerminalWriteRequest = { terminalId, data }
       ipcRenderer.send('terminal:write', payload)
@@ -75,6 +81,14 @@ const api = {
     },
     wasFreshlyCreated(): Promise<boolean> {
       return ipcRenderer.invoke('preferences:was-freshly-created') as Promise<boolean>
+    }
+  },
+  appState: {
+    get(): Promise<unknown | null> {
+      return ipcRenderer.invoke('app-state:get') as Promise<unknown | null>
+    },
+    set(next: unknown): Promise<unknown> {
+      return ipcRenderer.invoke('app-state:set', next) as Promise<unknown>
     }
   }
 }

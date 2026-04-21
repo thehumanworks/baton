@@ -1,4 +1,5 @@
 import type {
+  TerminalAttachResponse,
   TerminalCreateRequest,
   TerminalCreateResponse,
   TerminalDataEvent,
@@ -14,6 +15,7 @@ type Cleanup = () => void
 export interface TerminalClient {
   readonly mode: 'electron' | 'websocket' | 'demo'
   createTerminal(request: TerminalCreateRequest): Promise<TerminalCreateResponse>
+  attachTerminal(terminalId: string): Promise<TerminalAttachResponse>
   write(terminalId: string, data: string): void
   resize(terminalId: string, cols: number, rows: number): void
   close(terminalId: string): Promise<boolean>
@@ -40,6 +42,10 @@ class ElectronTerminalClient implements TerminalClient {
 
   createTerminal(request: TerminalCreateRequest): Promise<TerminalCreateResponse> {
     return window.baton!.terminal.create(request)
+  }
+
+  attachTerminal(terminalId: string): Promise<TerminalAttachResponse> {
+    return window.baton!.terminal.attach(terminalId)
   }
 
   write(terminalId: string, data: string): void {
@@ -147,6 +153,10 @@ class WebSocketTerminalClient implements TerminalClient {
 
     this.send({ type: 'create', clientId, ...request })
     return promise
+  }
+
+  async attachTerminal(_terminalId: string): Promise<TerminalAttachResponse> {
+    throw new Error('Attaching existing sessions is not supported by the WebSocket terminal backend yet')
   }
 
   write(terminalId: string, data: string): void {
@@ -334,6 +344,22 @@ class DemoTerminalClient implements TerminalClient {
     }
   }
 
+  async attachTerminal(terminalId: string): Promise<TerminalAttachResponse> {
+    if (!this.lineBuffers.has(terminalId)) {
+      throw new Error('Demo terminal session is no longer available')
+    }
+
+    return {
+      terminalId,
+      shell: 'demo',
+      shellId: 'demo',
+      cwd: '~',
+      status: 'running',
+      exitCode: null,
+      buffer: '',
+    }
+  }
+
   write(terminalId: string, data: string): void {
     if (!this.lineBuffers.has(terminalId)) return
 
@@ -473,6 +499,16 @@ export class BufferedTerminalClient implements TerminalClient {
     return this.inner.createTerminal(request).then((response) => {
       if (!this.buffers.has(response.terminalId)) this.buffers.set(response.terminalId, '')
       return response
+    })
+  }
+
+  attachTerminal(terminalId: string): Promise<TerminalAttachResponse> {
+    return this.inner.attachTerminal(terminalId).then((response) => {
+      const next = response.buffer.length > this.maxBufferBytes
+        ? response.buffer.slice(-this.maxBufferBytes)
+        : response.buffer
+      this.buffers.set(terminalId, next)
+      return { ...response, buffer: next }
     })
   }
 

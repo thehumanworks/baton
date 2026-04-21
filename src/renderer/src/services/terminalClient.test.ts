@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { BufferedTerminalClient, type TerminalClient } from './terminalClient'
 import type {
+  TerminalAttachResponse,
   TerminalCreateRequest,
   TerminalCreateResponse,
   TerminalDataEvent,
@@ -31,6 +32,17 @@ function makeStubClient(): TerminalClient & {
         shell: 'pwsh',
         shellId: request.shellId ?? 'auto',
         cwd: '/tmp',
+      }
+    },
+    async attachTerminal(terminalId: string): Promise<TerminalAttachResponse> {
+      return {
+        terminalId,
+        shell: 'pwsh',
+        shellId: 'pwsh',
+        cwd: '/tmp',
+        status: 'running',
+        exitCode: null,
+        buffer: 'hello from host',
       }
     },
     write() {},
@@ -66,6 +78,16 @@ describe('BufferedTerminalClient', () => {
     expect(inner.calls.createTerminal).toHaveLength(1)
     expect(inner.calls.createTerminal[0]!.shellId).toBe('wsl:Ubuntu')
     expect(inner.calls.createTerminal[0]!.wslDistro).toBe('Ubuntu')
+  })
+
+  test('attachTerminal seeds the replay buffer from the host response', async () => {
+    const inner = makeStubClient()
+    const buffered = new BufferedTerminalClient(inner)
+
+    const response = await buffered.attachTerminal('pty-existing')
+
+    expect(response.status).toBe('running')
+    expect(buffered.getBuffer('pty-existing')).toBe('hello from host')
   })
 
   test('listShells delegates to the inner client', async () => {

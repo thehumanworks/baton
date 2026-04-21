@@ -14,6 +14,21 @@ export interface TerminalCreateResponse {
   cwd?: string
 }
 
+export interface TerminalAttachRequest {
+  terminalId: string
+}
+
+export interface TerminalAttachResponse {
+  terminalId: string
+  shell: string
+  shellId: string
+  pid?: number
+  cwd?: string
+  status: 'running' | 'exited'
+  exitCode: number | null
+  buffer: string
+}
+
 export interface ShellDescriptorDTO {
   id: string
   label: string

@@ -11,6 +11,8 @@
     "web": "vite --host 0.0.0.0 --config vite.web.config.ts",
     "web:terminal": "concurrently -k \"bun run terminal:server\" \"cross-env VITE_TERMINAL_WS_URL=ws://127.0.0.1:8787 vite --host 0.0.0.0 --config vite.web.config.ts\"",
     "terminal:server": "tsx server/pty-websocket.ts",
+    "verify:session-persistence": "bun run build && bun scripts/verify-session-persistence.mjs",
+    "verify:session-persistence:built": "bun scripts/verify-session-persistence.mjs",
     "typecheck": "tsc --noEmit",
     "build": "bun run typecheck && electron-vite build",
     "build:web": "bun run typecheck && vite build --config vite.web.config.ts",

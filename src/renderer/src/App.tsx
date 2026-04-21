@@ -16,7 +16,7 @@ import {
   type WorkspaceSettings,
   type WorkspaceState,
 } from "./domain";
-import { loadAppState, saveAppState } from "./persistence";
+import { hydrateAppState, loadAppState, saveAppState } from "./persistence";
 import { TerminalClientContext, useTerminalClient } from "./services/terminalContext";
 import { createBufferedTerminalClient } from "./services/terminalClient";
 import { ThemeProvider } from "./services/themeContext";
@@ -78,18 +78,50 @@ function AppShell() {
     backendDefaultShellId,
   );
 
+  const [storageHydrated, setStorageHydrated] = useState(
+    !window.baton?.appState,
+  );
+
   const activeWorkspace =
     workspaces.find((workspace) => workspace.id === activeWorkspaceId) ??
       workspaces[0];
 
   useEffect(() => {
-    saveAppState({
-      workspaces,
-      activeWorkspaceId,
-      sidebarCollapsed,
-      themePreference,
-    });
-  }, [workspaces, activeWorkspaceId, sidebarCollapsed, themePreference]);
+    let cancelled = false;
+
+    void hydrateAppState()
+      .then((hydrated) => {
+        if (cancelled || !hydrated) return;
+        setWorkspaces(hydrated.workspaces);
+        setActiveWorkspaceId(hydrated.activeWorkspaceId);
+        setSidebarCollapsed(hydrated.sidebarCollapsed);
+        setThemePreference(hydrated.themePreference);
+      })
+      .finally(() => {
+        if (!cancelled) setStorageHydrated(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!storageHydrated) return;
+
+    const handle = window.setTimeout(() => {
+      saveAppState({
+        workspaces,
+        activeWorkspaceId,
+        sidebarCollapsed,
+        themePreference,
+      });
+    }, 120);
+
+    return () => {
+      window.clearTimeout(handle);
+    };
+  }, [storageHydrated, workspaces, activeWorkspaceId, sidebarCollapsed, themePreference]);
 
   const handleThemeChange = useCallback((next: ThemePreference) => {
     setThemePreference(next);
