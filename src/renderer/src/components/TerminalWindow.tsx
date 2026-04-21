@@ -7,6 +7,7 @@ import {
 } from "../domain";
 import { useTerminalClient } from "../services/terminalContext";
 import { TerminalPane } from "./TerminalPane";
+import { createTerminalStartupGate } from "./terminal-startup";
 
 interface TerminalWindowProps {
   terminal: TerminalWindowState;
@@ -37,12 +38,18 @@ interface ResizeState {
 
 export function TerminalWindow(props: TerminalWindowProps) {
   const client = useTerminalClient();
-  const hasStartedRef = useRef(false);
+  const startupGateRef = useRef<ReturnType<typeof createTerminalStartupGate> | null>(null);
   const onPatchRef = useRef(props.onPatch);
   const settingsRef = useRef(props.workspaceSettings);
+  const appDefaultShellIdRef = useRef(props.appDefaultShellId);
   const dragState = useRef<DragState | null>(null);
   const resizeState = useRef<ResizeState | null>(null);
   const terminal = props.terminal;
+
+  if (!startupGateRef.current) {
+    startupGateRef.current = createTerminalStartupGate();
+  }
+  const startupGate = startupGateRef.current;
 
   useEffect(() => {
     onPatchRef.current = props.onPatch;
@@ -53,15 +60,23 @@ export function TerminalWindow(props: TerminalWindowProps) {
   }, [props.workspaceSettings]);
 
   useEffect(() => {
-    if (hasStartedRef.current || terminal.status !== "starting") return;
-    hasStartedRef.current = true;
+    appDefaultShellIdRef.current = props.appDefaultShellId;
+  }, [props.appDefaultShellId]);
+
+  useEffect(() => {
+    const startupKey = startupGate.begin(terminal);
+    if (!startupKey) return;
 
     let cancelled = false;
 
     if (terminal.terminalId) {
       client.attachTerminal(terminal.terminalId)
         .then((response) => {
-          if (cancelled) return;
+          if (cancelled) {
+            startupGate.finish(startupKey);
+            return;
+          }
+          startupGate.finish(startupKey);
 
           onPatchRef.current({
             title: `${response.shell} · ${response.cwd ?? "~"}`,
@@ -70,7 +85,11 @@ export function TerminalWindow(props: TerminalWindowProps) {
           });
         })
         .catch((error: unknown) => {
-          hasStartedRef.current = false;
+          if (cancelled) {
+            startupGate.finish(startupKey);
+            return;
+          }
+          startupGate.finish(startupKey);
           onPatchRef.current({
             status: "error",
             title: error instanceof Error
@@ -87,7 +106,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
     const settings = settingsRef.current;
     const cwd = settings.defaultCwd?.trim() || undefined;
     const startCommand = settings.startCommand?.trim() || undefined;
-    const effectiveShellId = settings.shellId || props.appDefaultShellId || undefined;
+    const effectiveShellId = settings.shellId || appDefaultShellIdRef.current || undefined;
     const wslDistro = settings.wslDistro || undefined;
 
     client.createTerminal({
@@ -99,10 +118,12 @@ export function TerminalWindow(props: TerminalWindowProps) {
     })
       .then((response) => {
         if (cancelled) {
+          startupGate.finish(startupKey);
           void client.close(response.terminalId);
           return;
         }
 
+        startupGate.finish(startupKey);
         onPatchRef.current({
           terminalId: response.terminalId,
           title: `${response.shell} · ${response.cwd ?? "~"}`,
@@ -118,7 +139,11 @@ export function TerminalWindow(props: TerminalWindowProps) {
         }
       })
       .catch((error: unknown) => {
-        hasStartedRef.current = false;
+        if (cancelled) {
+          startupGate.finish(startupKey);
+          return;
+        }
+        startupGate.finish(startupKey);
         onPatchRef.current({
           status: "error",
           title: error instanceof Error
@@ -130,7 +155,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
     return () => {
       cancelled = true;
     };
-  }, [client, props.appDefaultShellId, terminal.status, terminal.terminalId]);
+  }, [client, startupGate, terminal.status, terminal.terminalId]);
 
   function startDrag(event: PointerEvent<HTMLDivElement>): void {
     const target = event.target as HTMLElement;
