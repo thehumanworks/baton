@@ -69,15 +69,24 @@ function makeStubClient(): TerminalClient & {
 }
 
 describe('BufferedTerminalClient', () => {
-  test('forwards shellId and wslDistro on createTerminal', async () => {
+  test('forwards shellId, wslDistro, and startCommand on createTerminal', async () => {
     const inner = makeStubClient()
     const buffered = new BufferedTerminalClient(inner)
 
-    await buffered.createTerminal({ cols: 100, rows: 30, shellId: 'wsl:Ubuntu', wslDistro: 'Ubuntu' })
+    await buffered.createTerminal({
+      cols: 100,
+      rows: 30,
+      shellId: 'wsl:Ubuntu',
+      wslDistro: 'Ubuntu',
+      startCommand: 'pi --model openai-codex/gpt-5.3-codex-spark',
+    })
 
     expect(inner.calls.createTerminal).toHaveLength(1)
     expect(inner.calls.createTerminal[0]!.shellId).toBe('wsl:Ubuntu')
     expect(inner.calls.createTerminal[0]!.wslDistro).toBe('Ubuntu')
+    expect(inner.calls.createTerminal[0]!.startCommand).toBe(
+      'pi --model openai-codex/gpt-5.3-codex-spark',
+    )
   })
 
   test('attachTerminal seeds the replay buffer from the host response', async () => {

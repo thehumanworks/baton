@@ -4,6 +4,7 @@ export interface TerminalCreateRequest {
   cwd?: string
   shellId?: string
   wslDistro?: string
+  startCommand?: string
 }
 
 export interface TerminalCreateResponse {

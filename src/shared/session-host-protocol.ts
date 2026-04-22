@@ -6,6 +6,7 @@ export interface HostCreateRequest {
   cwd?: string
   shellId?: string
   wslDistro?: string
+  startCommand?: string
 }
 
 export interface HostAttachRequest {

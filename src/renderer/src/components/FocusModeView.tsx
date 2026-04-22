@@ -390,6 +390,7 @@ function FocusedTerminalCard(props: FocusedTerminalCardProps) {
         cwd,
         ...(effectiveShellId ? { shellId: effectiveShellId } : {}),
         ...(wslDistro ? { wslDistro } : {}),
+        ...(startCommand ? { startCommand } : {}),
       })
       .then((response) => {
         if (cancelled) {
@@ -404,12 +405,6 @@ function FocusedTerminalCard(props: FocusedTerminalCardProps) {
           status: "running",
           exitCode: null,
         });
-        if (startCommand) {
-          window.setTimeout(() => {
-            if (cancelled) return;
-            client.write(response.terminalId, `${startCommand}\r`);
-          }, 0);
-        }
       })
       .catch((error: unknown) => {
         if (cancelled) {

@@ -115,6 +115,7 @@ export function TerminalWindow(props: TerminalWindowProps) {
       cwd,
       ...(effectiveShellId ? { shellId: effectiveShellId } : {}),
       ...(wslDistro ? { wslDistro } : {}),
+      ...(startCommand ? { startCommand } : {}),
     })
       .then((response) => {
         if (cancelled) {
@@ -131,12 +132,6 @@ export function TerminalWindow(props: TerminalWindowProps) {
           exitCode: null,
         });
 
-        if (startCommand) {
-          window.setTimeout(() => {
-            if (cancelled) return;
-            client.write(response.terminalId, `${startCommand}\r`);
-          }, 0);
-        }
       })
       .catch((error: unknown) => {
         if (cancelled) {

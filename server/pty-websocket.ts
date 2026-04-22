@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import { detectPreferredShellId, resolveShell } from '../src/main/shell-resolver'
 import { detectShells } from '../src/main/shell-detection'
+import { createTerminalStartCommandInjector } from '../src/shared/terminal-start-command'
 
 interface CreateMessage {
   type: 'create'
@@ -15,6 +16,7 @@ interface CreateMessage {
   cwd?: string
   shellId?: string
   wslDistro?: string
+  startCommand?: string
 }
 
 interface WriteMessage {
@@ -177,9 +179,22 @@ server.on('connection', (socket, request) => {
           env: resolved.env,
         })
 
+        const startCommand = typeof message.startCommand === 'string'
+          && message.startCommand.trim().length > 0
+          ? message.startCommand
+          : undefined
+        const startupCommandInjector = createTerminalStartCommandInjector(
+          (data) => terminal.write(data),
+          { startCommand },
+        )
+
         terminals.set(terminalId, terminal)
-        terminal.onData((data) => send(socket, { type: 'data', terminalId, data }))
+        terminal.onData((data) => {
+          startupCommandInjector?.observeOutput(data)
+          send(socket, { type: 'data', terminalId, data })
+        })
         terminal.onExit(({ exitCode, signal }) => {
+          startupCommandInjector?.dispose()
           terminals.delete(terminalId)
           send(socket, { type: 'exit', terminalId, exitCode, signal })
         })

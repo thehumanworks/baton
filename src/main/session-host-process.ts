@@ -6,6 +6,10 @@ import path from 'node:path'
 import * as pty from 'node-pty'
 import type { Socket } from 'node:net'
 import type { HostClientMessage, HostServerMessage } from '../shared/session-host-protocol'
+import {
+  createTerminalStartCommandInjector,
+  type TerminalStartCommandInjector,
+} from '../shared/terminal-start-command'
 import { detectShells } from './shell-detection'
 import { resolveShell } from './shell-resolver'
 import { clampInteger, resolveWorkspaceCwd } from './terminal-runtime'
@@ -17,6 +21,7 @@ interface SessionRecord {
   pid?: number
   cwd?: string
   pty?: pty.IPty
+  startupCommandInjector?: TerminalStartCommandInjector
   buffer: string
   status: 'running' | 'exited'
   exitCode: number | null
@@ -96,6 +101,15 @@ export async function runSessionHost(): Promise<void> {
               env: resolved.env,
             })
 
+            const startCommand = typeof message.startCommand === 'string'
+              && message.startCommand.trim().length > 0
+              ? message.startCommand
+              : undefined
+            const startupCommandInjector = createTerminalStartCommandInjector(
+              (data) => terminal.write(data),
+              { startCommand },
+            )
+
             const session: SessionRecord = {
               terminalId,
               shell: resolved.descriptor.label,
@@ -103,6 +117,7 @@ export async function runSessionHost(): Promise<void> {
               pid: terminal.pid,
               cwd: resolved.cwd,
               pty: terminal,
+              ...(startupCommandInjector ? { startupCommandInjector } : {}),
               buffer: '',
               status: 'running',
               exitCode: null,
@@ -110,6 +125,7 @@ export async function runSessionHost(): Promise<void> {
             }
 
             terminal.onData((data) => {
+              session.startupCommandInjector?.observeOutput(data)
               session.buffer = appendToRingBuffer(session.buffer, data)
               for (const attachment of session.attachments) {
                 send(attachment, { type: 'data', terminalId, data })
@@ -117,6 +133,8 @@ export async function runSessionHost(): Promise<void> {
             })
 
             terminal.onExit(({ exitCode, signal }) => {
+              session.startupCommandInjector?.dispose()
+              session.startupCommandInjector = undefined
               session.pty = undefined
               session.status = 'exited'
               session.exitCode = exitCode
@@ -199,6 +217,8 @@ export async function runSessionHost(): Promise<void> {
           }
 
           try {
+            session.startupCommandInjector?.dispose()
+            session.startupCommandInjector = undefined
             session.pty?.kill()
           } catch {
             // Ignore shutdown errors.
