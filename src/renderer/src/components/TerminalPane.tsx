@@ -124,8 +124,19 @@ export function TerminalPane({ terminalId }: TerminalPaneProps) {
     window.setTimeout(fitAndResize, 0);
     window.setTimeout(() => terminal.focus(), 50);
 
+    // Mobile browsers shrink the visual viewport when the soft keyboard
+    // opens. Refit shortly after so xterm recalculates rows and the
+    // prompt line stays visible instead of sliding under the keyboard.
+    const onViewportChange = (): void => {
+      window.setTimeout(fitAndResize, 0);
+    };
+    window.visualViewport?.addEventListener("resize", onViewportChange);
+    window.visualViewport?.addEventListener("scroll", onViewportChange);
+
     return () => {
       resizeObserver.disconnect();
+      window.visualViewport?.removeEventListener("resize", onViewportChange);
+      window.visualViewport?.removeEventListener("scroll", onViewportChange);
       dataDisposable.dispose();
       disposeData();
       disposeExit();
