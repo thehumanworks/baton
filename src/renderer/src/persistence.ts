@@ -1,4 +1,4 @@
-import { createWorkspace, type WorkspaceSettings, type WorkspaceState } from './domain'
+import { createWorkspace, type TerminalWindowState, type WorkspaceSettings, type WorkspaceState } from './domain'
 import { sanitizeThemePreference, type ThemePreference } from './theme'
 
 const STORAGE_KEY = 'baton.state.v1'
@@ -62,6 +62,33 @@ function sanitizeWorkspace(
   workspace: WorkspaceState,
   options: { persistTerminalIds: boolean },
 ): WorkspaceState {
+  const terminals: TerminalWindowState[] = Array.isArray(workspace.terminals)
+    ? workspace.terminals.map((terminal, index) => {
+        const terminalId = options.persistTerminalIds
+          ? sanitizeTerminalId(terminal.terminalId)
+          : undefined
+        const status: TerminalWindowState['status'] = terminalId
+          ? 'starting'
+          : terminal.status === 'exited'
+          ? 'exited'
+          : 'starting'
+        return {
+          ...terminal,
+          title: terminal.title || `Terminal ${index + 1}`,
+          terminalId,
+          status,
+          minimized: Boolean(terminal.minimized),
+          z: Number.isFinite(terminal.z) ? terminal.z : index + 1,
+        }
+      })
+    : []
+
+  const rawFocusedId = (workspace as { focusedTerminalId?: unknown }).focusedTerminalId
+  const focusedTerminalId =
+    typeof rawFocusedId === 'string' && terminals.some((terminal) => terminal.id === rawFocusedId)
+      ? rawFocusedId
+      : null
+
   return {
     ...workspace,
     viewport: {
@@ -70,21 +97,9 @@ function sanitizeWorkspace(
       scale: Number.isFinite(workspace.viewport?.scale) ? workspace.viewport.scale : 1,
     },
     settings: sanitizeSettings((workspace as { settings?: unknown }).settings),
-    terminals: Array.isArray(workspace.terminals)
-      ? workspace.terminals.map((terminal, index) => {
-          const terminalId = options.persistTerminalIds
-            ? sanitizeTerminalId(terminal.terminalId)
-            : undefined
-          return {
-            ...terminal,
-            title: terminal.title || `Terminal ${index + 1}`,
-            terminalId,
-            status: terminalId ? 'starting' : terminal.status === 'exited' ? 'exited' : 'starting',
-            minimized: Boolean(terminal.minimized),
-            z: Number.isFinite(terminal.z) ? terminal.z : index + 1,
-          }
-        })
-      : [],
+    focusMode: Boolean((workspace as { focusMode?: unknown }).focusMode),
+    focusedTerminalId,
+    terminals,
   }
 }
 

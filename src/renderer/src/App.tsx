@@ -237,9 +237,14 @@ function AppShell() {
         index: workspace.terminals.length + 1,
       });
 
+      const focusedTerminalId = workspace.focusMode
+        ? terminal.id
+        : workspace.focusedTerminalId;
+
       return {
         ...workspace,
         terminals: [...workspace.terminals, terminal],
+        focusedTerminalId,
       };
     });
   }
@@ -264,12 +269,31 @@ function AppShell() {
     );
     if (terminal?.terminalId) void terminalClient.close(terminal.terminalId);
 
-    updateWorkspace(workspaceId, (current) => ({
-      ...current,
-      terminals: current.terminals.filter((item) =>
+    updateWorkspace(workspaceId, (current) => {
+      const remaining = current.terminals.filter((item) =>
         item.id !== terminalWindowId
-      ),
-    }));
+      );
+      const removedIndex = current.terminals.findIndex((item) =>
+        item.id === terminalWindowId
+      );
+      let focusedTerminalId = current.focusedTerminalId;
+      if (focusedTerminalId === terminalWindowId) {
+        if (remaining.length === 0) {
+          focusedTerminalId = null;
+        } else {
+          const fallbackIndex = Math.min(
+            Math.max(removedIndex, 0),
+            remaining.length - 1,
+          );
+          focusedTerminalId = remaining[fallbackIndex]!.id;
+        }
+      }
+      return {
+        ...current,
+        terminals: remaining,
+        focusedTerminalId,
+      };
+    });
   }
 
   function toggleTerminalMinimized(
@@ -311,6 +335,36 @@ function AppShell() {
     });
   }
 
+  function toggleFocusMode(workspaceId: string): void {
+    updateWorkspace(workspaceId, (workspace) => {
+      const nextFocus = !workspace.focusMode;
+      const focusedTerminalId = nextFocus
+        ? workspace.focusedTerminalId &&
+            workspace.terminals.some((terminal) =>
+              terminal.id === workspace.focusedTerminalId
+            )
+          ? workspace.focusedTerminalId
+          : workspace.terminals[0]?.id ?? null
+        : workspace.focusedTerminalId;
+
+      return {
+        ...workspace,
+        focusMode: nextFocus,
+        focusedTerminalId,
+      };
+    });
+  }
+
+  function focusTerminal(workspaceId: string, terminalWindowId: string): void {
+    updateWorkspace(workspaceId, (workspace) => {
+      if (!workspace.terminals.some((terminal) => terminal.id === terminalWindowId)) {
+        return workspace;
+      }
+      if (workspace.focusedTerminalId === terminalWindowId) return workspace;
+      return { ...workspace, focusedTerminalId: terminalWindowId };
+    });
+  }
+
   if (!activeWorkspace) return null;
 
   const renameTarget = renameTargetId
@@ -329,18 +383,20 @@ function AppShell() {
       onPreferenceChange={handleThemeChange}
     >
       <main className="app-bg flex w-full h-full min-w-0 min-h-0">
-        <WorkspaceSidebar
-          workspaces={workspaces}
-          activeWorkspaceId={activeWorkspace.id}
-          collapsed={sidebarCollapsed}
-          onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
-          onSelectWorkspace={setActiveWorkspaceId}
-          onAddWorkspace={openAddWorkspace}
-          onRenameWorkspace={openRenameWorkspace}
-          onDeleteWorkspace={openDeleteWorkspace}
-          onOpenWorkspaceSettings={openWorkspaceSettings}
-          onOpenAppPreferences={() => setAppPreferencesOpen(true)}
-        />
+        {!activeWorkspace.focusMode && (
+          <WorkspaceSidebar
+            workspaces={workspaces}
+            activeWorkspaceId={activeWorkspace.id}
+            collapsed={sidebarCollapsed}
+            onToggleCollapsed={() => setSidebarCollapsed((value) => !value)}
+            onSelectWorkspace={setActiveWorkspaceId}
+            onAddWorkspace={openAddWorkspace}
+            onRenameWorkspace={openRenameWorkspace}
+            onDeleteWorkspace={openDeleteWorkspace}
+            onOpenWorkspaceSettings={openWorkspaceSettings}
+            onOpenAppPreferences={() => setAppPreferencesOpen(true)}
+          />
+        )}
         <Canvas
           workspace={activeWorkspace}
           terminalMode={terminalClient.mode}
@@ -356,6 +412,9 @@ function AppShell() {
             toggleTerminalMinimized(activeWorkspace.id, terminalWindowId)}
           onBringTerminalToFront={(terminalWindowId) =>
             bringTerminalToFront(activeWorkspace.id, terminalWindowId)}
+          onToggleFocusMode={() => toggleFocusMode(activeWorkspace.id)}
+          onFocusTerminal={(terminalWindowId) =>
+            focusTerminal(activeWorkspace.id, terminalWindowId)}
         />
       </main>
       <PromptModal

@@ -374,6 +374,121 @@ describe('persistence workspace shell settings', () => {
     expect(state.workspaces[0]!.terminals[0]!.status).toBe('starting')
   })
 
+  test('loadAppState round-trips focusMode and focusedTerminalId when the terminal still exists', () => {
+    restoreWindow = installWindowAppStateBridge({
+      async get() {
+        return null
+      },
+      async set(next: unknown) {
+        return next
+      },
+    })
+
+    storage.setItem(
+      'baton.state.v1',
+      JSON.stringify({
+        workspaces: [
+          {
+            id: 'ws-1',
+            name: 'Main',
+            viewport: { x: 0, y: 0, scale: 1 },
+            focusMode: true,
+            focusedTerminalId: 'terminal-keep',
+            terminals: [
+              {
+                id: 'terminal-keep',
+                title: 'bash · /tmp',
+                x: 10,
+                y: 20,
+                width: 400,
+                height: 300,
+                z: 1,
+                minimized: false,
+                terminalId: 'session-a',
+                status: 'running',
+                exitCode: null,
+              },
+            ],
+            settings: {},
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        activeWorkspaceId: 'ws-1',
+        sidebarCollapsed: false,
+      }),
+    )
+
+    const state = loadAppState()
+    expect(state.workspaces[0]!.focusMode).toBe(true)
+    expect(state.workspaces[0]!.focusedTerminalId).toBe('terminal-keep')
+  })
+
+  test('loadAppState clears focusedTerminalId when the referenced terminal is gone', () => {
+    storage.setItem(
+      'baton.state.v1',
+      JSON.stringify({
+        workspaces: [
+          {
+            id: 'ws-1',
+            name: 'Main',
+            viewport: { x: 0, y: 0, scale: 1 },
+            focusMode: true,
+            focusedTerminalId: 'terminal-missing',
+            terminals: [
+              {
+                id: 'terminal-present',
+                title: 'bash · /tmp',
+                x: 0,
+                y: 0,
+                width: 400,
+                height: 300,
+                z: 1,
+                minimized: false,
+                status: 'running',
+                exitCode: null,
+              },
+            ],
+            settings: {},
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        activeWorkspaceId: 'ws-1',
+        sidebarCollapsed: false,
+      }),
+    )
+
+    const state = loadAppState()
+    expect(state.workspaces[0]!.focusMode).toBe(true)
+    expect(state.workspaces[0]!.focusedTerminalId).toBeNull()
+  })
+
+  test('loadAppState defaults focus fields to disabled for legacy persisted workspaces', () => {
+    storage.setItem(
+      'baton.state.v1',
+      JSON.stringify({
+        workspaces: [
+          {
+            id: 'ws-1',
+            name: 'Main',
+            viewport: { x: 0, y: 0, scale: 1 },
+            terminals: [],
+            settings: {},
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        activeWorkspaceId: 'ws-1',
+        sidebarCollapsed: false,
+      }),
+    )
+
+    const state = loadAppState()
+    expect(state.workspaces[0]!.focusMode).toBe(false)
+    expect(state.workspaces[0]!.focusedTerminalId).toBeNull()
+  })
+
   test('loadAppState preserves saved terminalId and forces reattach on Electron restore', () => {
     restoreWindow = installWindowAppStateBridge({
       async get() {

@@ -552,6 +552,205 @@ input {
   }
 }
 
+/*
+ * Focus mode carousel.
+ *
+ * The track holds one slide per terminal at 100% width. The active terminal
+ * sits centered; neighbors peek in from either edge. Swipe / arrow-key nav
+ * translates the whole track so every terminal stays mounted and its
+ * running PTY session is preserved across focus changes.
+ */
+.focus-mode-surface {
+  background: var(--color-canvas);
+  touch-action: pan-y;
+}
+
+.focus-mode-track {
+  will-change: transform;
+}
+
+.focus-mode-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 4vw, 56px) clamp(48px, 10vw, 160px);
+  box-sizing: border-box;
+}
+
+.focus-mode-window {
+  display: flex;
+  flex-direction: column;
+  width: min(820px, 100%);
+  height: min(640px, calc(100vh - 160px));
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  transform-origin: center center;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms ease, filter 240ms ease;
+}
+
+.focus-mode-window.is-peek {
+  transform: scale(0.92);
+  opacity: 0.5;
+  filter: saturate(0.6);
+  pointer-events: none;
+  cursor: pointer;
+}
+
+.focus-mode-slide[data-focus-card-active='false'] {
+  cursor: pointer;
+}
+
+.focus-mode-window.is-active {
+  transform: scale(1);
+  opacity: 1;
+  filter: none;
+}
+
+.focus-mode-peek-scrim {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-canvas) 45%, transparent);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .focus-mode-slide {
+    padding: 16px 28px 56px;
+  }
+  .focus-mode-window {
+    width: 100%;
+    height: min(72vh, calc(100vh - 160px));
+  }
+}
+
+.focus-mode-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  border: 1px solid var(--surface-window-border);
+  background: color-mix(in srgb, var(--surface-window) 65%, transparent);
+  color: var(--color-muted);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+  z-index: 3;
+}
+
+.focus-mode-nav:hover {
+  color: var(--color-fg);
+  background: var(--surface-window);
+  transform: translateY(-50%) scale(1.04);
+}
+
+.focus-mode-nav--prev {
+  left: clamp(12px, 2vw, 28px);
+}
+
+.focus-mode-nav--next {
+  right: clamp(12px, 2vw, 28px);
+}
+
+@media (max-width: 640px) {
+  .focus-mode-nav {
+    display: none;
+  }
+}
+
+.focus-mode-dots {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 4vh, 36px);
+  transform: translateX(-50%);
+  display: inline-flex;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  z-index: 3;
+}
+
+.focus-mode-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-muted) 45%, transparent);
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.focus-mode-dot:hover {
+  background: var(--color-muted);
+}
+
+.focus-mode-dot.is-active {
+  background: var(--color-fg);
+  transform: scale(1.2);
+}
+
+.focus-mode-spawn {
+  position: absolute;
+  left: clamp(16px, 3vw, 32px);
+  bottom: clamp(14px, 3.6vh, 34px);
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 160ms ease;
+  z-index: 3;
+}
+
+.focus-mode-spawn:hover,
+.focus-mode-spawn:focus-visible {
+  color: var(--color-fg);
+}
+
+.focus-mode-toggle {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--surface-window-border);
+  background: color-mix(in srgb, var(--surface-window) 55%, transparent);
+  color: var(--color-muted);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.focus-mode-toggle:hover {
+  color: var(--color-fg);
+  background: var(--surface-window);
+}
+
+.focus-mode-toggle[data-active='true'] {
+  color: var(--color-fg);
+  background: var(--surface-window);
+  border-color: color-mix(in srgb, var(--color-fg) 38%, transparent);
+}
+
+.focus-mode-toggle-dot {
+  width: 14px;
+  height: 14px;
+  display: inline-grid;
+  place-items: center;
+  color: currentColor;
+}
+
 .xterm {
   height: 100%;
 }

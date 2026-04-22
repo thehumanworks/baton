@@ -33,6 +33,8 @@ export interface WorkspaceState {
   viewport: ViewportState
   terminals: TerminalWindowState[]
   settings: WorkspaceSettings
+  focusMode: boolean
+  focusedTerminalId: string | null
   createdAt: number
   updatedAt: number
 }
@@ -58,6 +60,8 @@ export function createWorkspace(name: string): WorkspaceState {
     viewport: { x: 160, y: 120, scale: 1 },
     terminals: [],
     settings: {},
+    focusMode: false,
+    focusedTerminalId: null,
     createdAt: now,
     updatedAt: now
   }
@@ -86,4 +90,26 @@ export function createTerminalWindow(input: {
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
+}
+
+export function resolveFocusedTerminalIndex(
+  terminals: TerminalWindowState[],
+  focusedTerminalId: string | null,
+): number {
+  if (terminals.length === 0) return -1
+  if (!focusedTerminalId) return 0
+  const index = terminals.findIndex((terminal) => terminal.id === focusedTerminalId)
+  return index === -1 ? 0 : index
+}
+
+export function nextFocusedTerminalId(
+  terminals: TerminalWindowState[],
+  focusedTerminalId: string | null,
+  direction: 1 | -1,
+): string | null {
+  if (terminals.length === 0) return null
+  const current = resolveFocusedTerminalIndex(terminals, focusedTerminalId)
+  const total = terminals.length
+  const nextIndex = (current + direction + total) % total
+  return terminals[nextIndex]!.id
 }
