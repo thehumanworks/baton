@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { BufferedTerminalClient, type TerminalClient } from './terminalClient'
+import { BufferedTerminalClient, resolveTerminalWebSocketUrl, type TerminalClient } from './terminalClient'
 import type {
   TerminalAttachResponse,
   TerminalCreateRequest,
@@ -99,5 +99,20 @@ describe('BufferedTerminalClient', () => {
     expect(inner.calls.listShellsCount).toBe(1)
     expect(result.defaultShellId).toBe('pwsh')
     expect(result.shells[0]!.id).toBe('pwsh')
+  })
+})
+
+describe('resolveTerminalWebSocketUrl', () => {
+  const phonePageLocation = {
+    protocol: 'http:',
+    hostname: '192.168.1.20',
+  }
+
+  test('derives the terminal server URL from the browser page host for LAN clients', () => {
+    expect(resolveTerminalWebSocketUrl('auto', phonePageLocation)).toBe('ws://192.168.1.20:8787')
+  })
+
+  test('replaces wildcard bind addresses with the browser page host', () => {
+    expect(resolveTerminalWebSocketUrl('ws://0.0.0.0:8787', phonePageLocation)).toBe('ws://192.168.1.20:8787/')
   })
 })

@@ -12,6 +12,35 @@ type Listener<T> = (event: T) => void
 
 type Cleanup = () => void
 
+type TerminalWebSocketLocation = Pick<Location, 'protocol' | 'hostname'>
+
+const DEFAULT_TERMINAL_WS_PORT = '8787'
+const WILDCARD_TERMINAL_WS_HOSTS = new Set(['0.0.0.0', '::'])
+
+function formatHostnameForUrl(hostname: string): string {
+  return hostname.includes(':') && !hostname.startsWith('[') ? `[${hostname}]` : hostname
+}
+
+export function resolveTerminalWebSocketUrl(
+  configuredUrl: string | undefined,
+  currentLocation: TerminalWebSocketLocation = window.location,
+): string | null {
+  const trimmed = configuredUrl?.trim()
+  if (!trimmed) return null
+
+  if (trimmed === 'auto') {
+    const protocol = currentLocation.protocol === 'https:' ? 'wss' : 'ws'
+    return `${protocol}://${formatHostnameForUrl(currentLocation.hostname)}:${DEFAULT_TERMINAL_WS_PORT}`
+  }
+
+  const endpoint = new URL(trimmed)
+  if (WILDCARD_TERMINAL_WS_HOSTS.has(endpoint.hostname)) {
+    endpoint.hostname = currentLocation.hostname
+  }
+
+  return endpoint.toString()
+}
+
 export interface TerminalClient {
   readonly mode: 'electron' | 'websocket' | 'demo'
   createTerminal(request: TerminalCreateRequest): Promise<TerminalCreateResponse>
@@ -545,7 +574,7 @@ export class BufferedTerminalClient implements TerminalClient {
 function createBaseTerminalClient(): TerminalClient {
   if (window.baton?.terminal) return new ElectronTerminalClient()
 
-  const wsUrl = import.meta.env.VITE_TERMINAL_WS_URL
+  const wsUrl = resolveTerminalWebSocketUrl(import.meta.env.VITE_TERMINAL_WS_URL)
   if (wsUrl) return new WebSocketTerminalClient(wsUrl, import.meta.env.VITE_TERMINAL_WS_TOKEN)
 
   return new DemoTerminalClient()

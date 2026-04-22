@@ -9,7 +9,7 @@
     "start": "bun run dev",
     "dev": "node scripts/dev.mjs",
     "web": "vite --host 0.0.0.0 --config vite.web.config.ts",
-    "web:terminal": "concurrently -k \"bun run terminal:server\" \"cross-env VITE_TERMINAL_WS_URL=ws://127.0.0.1:8787 vite --host 0.0.0.0 --config vite.web.config.ts\"",
+    "web:terminal": "concurrently -k \"cross-env TERMINAL_WS_HOST=0.0.0.0 bun run terminal:server\" \"cross-env VITE_TERMINAL_WS_URL=auto vite --host 0.0.0.0 --config vite.web.config.ts\"",
     "terminal:server": "tsx server/pty-websocket.ts",
     "verify:session-persistence": "bun run build && bun scripts/verify-session-persistence.mjs",
     "verify:session-persistence:built": "bun scripts/verify-session-persistence.mjs",

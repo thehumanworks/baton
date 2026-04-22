@@ -112,14 +112,17 @@ bun run web:terminal
 
 This starts:
 
-- `server/pty-websocket.ts` on `ws://127.0.0.1:8787`
-- the Vite web app with `VITE_TERMINAL_WS_URL=ws://127.0.0.1:8787`
+- `server/pty-websocket.ts` bound to `0.0.0.0` on port `8787`
+- the Vite web app with `VITE_TERMINAL_WS_URL=auto`
+
+This exposes the development PTY bridge to your LAN while the command is running.
+Open the Vite `Network` URL from the printed output on your phone. The browser client resolves `auto` to the same hostname that served the page, for example `ws://YOUR_MAC_LAN_IP:8787`. Do not use `0.0.0.0` as the browser WebSocket URL; it is only a server bind address.
 
 For testing on a phone on the same LAN, bind the terminal server explicitly and use a token:
 
 ```bash
 TERMINAL_WS_HOST=0.0.0.0 TERMINAL_WS_TOKEN=change-me bun run terminal:server
-VITE_TERMINAL_WS_URL=ws://YOUR_MAC_LAN_IP:8787 VITE_TERMINAL_WS_TOKEN=change-me bun run web
+VITE_TERMINAL_WS_URL=auto VITE_TERMINAL_WS_TOKEN=change-me bun run web
 ```
 
 Again: only do this on a trusted network.
